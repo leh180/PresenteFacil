@@ -1,0 +1,12 @@
+# Arquivos de dados gerados pela aplicação
+/dados/
+/data/
+
+# Arquivos de classe compilados do Java
+*.class
+
+# Arquivos de log e configuração de IDEs
+*.log
+.vscode/
+.idea/
+*.iml

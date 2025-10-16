@@ -5,11 +5,11 @@ import java.lang.reflect.Constructor;
 
 public class Arquivo<T extends Entidade> {
 
-    RandomAccessFile arquivo;
-    HashExtensivel<ParIDEndereco> indiceDireto;
-    String nomeArquivo;
-    Constructor<T> construtor;
-    int TAM_CABECALHO = 12;
+    protected RandomAccessFile arquivo;
+    protected HashExtensivel<ParIDEndereco> indiceDireto;
+    protected String nomeArquivo;
+    protected Constructor<T> construtor;
+    protected int TAM_CABECALHO = 12;
 
     public Arquivo(String nome, Constructor<T> construtor) throws Exception {
         this.nomeArquivo = nome;
