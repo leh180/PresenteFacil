@@ -21,7 +21,7 @@ O projeto foi construído em Java, utilizando um sistema de persistência de dad
 * Miguel Pessoa Lima Ferreira
 
 ---
-### 🎥 Vídeo de Demonstração:
+### 🎥 Vídeos de Demonstração:
 
 [VideoTP1](https://youtu.be/IlUBODiJDhQ)
 
