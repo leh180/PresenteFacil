@@ -20,12 +20,6 @@ public class ParEmailId implements RegistroHashExtensivel {
 
     private String email;
     private int id;
-    
-    /**
-     * Tamanho fixo do registro em bytes.
-     * Crucial para o funcionamento correto do Hash Extensível.
-     * (4 bytes para int ID) + (62 bytes para String e-mail com controle UTF).
-     */
     public final short SIZE = 66; 
 
     /**
@@ -105,7 +99,6 @@ public class ParEmailId implements RegistroHashExtensivel {
         
         byte[] resultado = baos.toByteArray();
         
-        // Garante o tamanho fixo preenchendo com zeros (padding)
         byte[] resultadoFinal = new byte[SIZE];
         System.arraycopy(resultado, 0, resultadoFinal, 0, resultado.length);
 

@@ -20,8 +20,8 @@ public class ListaProduto implements Entidade {
 
     // --- Atributos ---
     private int id;
-    private int idLista; // Chave estrangeira para Lista
-    private int idProduto; // Chave estrangeira para Produto
+    private int idLista;
+    private int idProduto;
     private int quantidade;
     private String observacoes;
 

@@ -24,7 +24,7 @@ public class Usuario implements Entidade {
     private int id;
     private String nome;
     private String email;
-    private String hashSenha; // Armazena o hash SHA-256 da senha
+    private String hashSenha; 
     private String perguntaSecreta;
     private String respostaSecreta;
 
@@ -216,7 +216,7 @@ public class Usuario implements Entidade {
         dos.writeInt(this.id);
         dos.writeUTF(this.nome);
         dos.writeUTF(this.email);
-        dos.writeUTF(this.hashSenha); // Guarda o hash
+        dos.writeUTF(this.hashSenha);
         dos.writeUTF(this.perguntaSecreta);
         dos.writeUTF(this.respostaSecreta);
         return baos.toByteArray();
@@ -237,7 +237,7 @@ public class Usuario implements Entidade {
         this.id = dis.readInt();
         this.nome = dis.readUTF();
         this.email = dis.readUTF();
-        this.hashSenha = dis.readUTF(); // Lê o hash
+        this.hashSenha = dis.readUTF();
         this.perguntaSecreta = dis.readUTF();
         this.respostaSecreta = dis.readUTF();
     }

@@ -13,7 +13,7 @@ import java.util.List;
  * para garantir a unicidade do GTIN.
  *
  * @author Ana, Bruno, João, Leticia e Miguel
- * @version 2.2
+ * @version 2.0
  */
 public class CRUDProduto extends Arquivo<Produto> {
 
@@ -25,7 +25,7 @@ public class CRUDProduto extends Arquivo<Produto> {
         indiceGtin = new HashExtensivel<>(
                 ParGtinId.class.getConstructor(),
                 4,
-                "data/produtos_gtin.diretorio.idx", // Verifique nomes dos ficheiros
+                "data/produtos_gtin.diretorio.idx",
                 "data/produtos_gtin.cestos.idx");
     }
 
@@ -38,16 +38,14 @@ public class CRUDProduto extends Arquivo<Produto> {
      */
     @Override
     public int create(Produto produto) throws Exception {
-        // REGRA DE NEGÓCIO: Verifica a duplicidade de GTIN ANTES de criar.
         if (readByGtin(produto.getGtin()) != null) {
-             throw new Exception("O GTIN informado já está cadastrado (pode estar inativo).");
+            throw new Exception("O GTIN informado já está cadastrado (pode estar inativo).");
         }
-        
-        produto.setAtivo(true); // Garante que seja criado como ativo
+
+        produto.setAtivo(true);
         int id = super.create(produto);
         produto.setID(id);
 
-        // A entrada no índice é sempre criada, pois o índice guarda ativos e inativos.
         indiceGtin.create(new ParGtinId(produto.getGtin(), id));
         return id;
     }
@@ -63,12 +61,10 @@ public class CRUDProduto extends Arquivo<Produto> {
         int gtinHash = gtin.hashCode();
         ParGtinId par = indiceGtin.read(gtinHash);
 
-        // Verificação anti-colisão de hash
         if (par != null && par.getGtin().equals(gtin)) {
-            // Lê o produto do ficheiro principal usando o ID encontrado no índice.
             return super.read(par.getID());
         }
-        return null; // GTIN não encontrado no índice.
+        return null;
     }
 
     /**
@@ -83,14 +79,11 @@ public class CRUDProduto extends Arquivo<Produto> {
         Produto produtoAntigo = super.read(novoProduto.getID());
         if (produtoAntigo == null) return false;
 
-        // Tenta atualizar o ficheiro principal
         if (super.update(novoProduto)) {
-            // O índice só precisa de ser atualizado se o próprio GTIN (a chave) for alterado.
             if (!produtoAntigo.getGtin().equals(novoProduto.getGtin())) {
                 indiceGtin.delete(produtoAntigo.getGtin().hashCode());
                 indiceGtin.create(new ParGtinId(novoProduto.getGtin(), novoProduto.getID()));
             }
-            // A mudança de 'ativo' NÃO afeta o índice nesta implementação.
             return true;
         }
         return false;
@@ -107,14 +100,11 @@ public class CRUDProduto extends Arquivo<Produto> {
     public boolean delete(int id) throws Exception {
         Produto produto = super.read(id);
         if (produto == null || !produto.isAtivo()) {
-            return false; // Não pode inativar um produto inexistente ou já inativo
+            return false;
         }
 
-        // Marca como inativo
         produto.setAtivo(false);
         
-        // Chama o update() desta classe, que apenas atualizará o registo no ficheiro,
-        // sem remover a entrada do índice.
         return this.update(produto);
     }
 
@@ -132,7 +122,7 @@ public class CRUDProduto extends Arquivo<Produto> {
             this.arquivo.seek(0);
             ultimoID = this.arquivo.readInt();
         } else {
-            return produtos; // Retorna a lista vazia
+            return produtos;
         }
         
         for (int i = 1; i <= ultimoID; i++) {

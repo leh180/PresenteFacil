@@ -20,8 +20,8 @@ import java.io.IOException;
  */
 public class ParIdProdutoListaProduto implements RegistroArvoreBMais<ParIdProdutoListaProduto> {
 
-    private int idProduto; // Chave de busca (ID do Produto)
-    private int idListaProduto; // Valor (ID do registro ListaProduto)
+    private int idProduto;
+    private int idListaProduto;
     private final short TAMANHO = 8;
 
     // --- Construtores ---

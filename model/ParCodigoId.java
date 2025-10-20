@@ -21,12 +21,6 @@ public class ParCodigoId implements RegistroHashExtensivel {
 
     private String codigo;
     private int id;
-    
-    /**
-     * Tamanho fixo do registro em bytes.
-     * (4 bytes para o ID) + (10 caracteres * 2 bytes/char = 20 bytes para o código).
-     * Total: 24 bytes.
-     */
     private final short TAMANHO = 24;
 
     /**
@@ -95,7 +89,6 @@ public class ParCodigoId implements RegistroHashExtensivel {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeInt(id);
-        // Escreve a string com tamanho fixo (10 chars) para garantir consistência
         dos.writeChars(String.format("%-10.10s", this.codigo));
         return baos.toByteArray();
     }

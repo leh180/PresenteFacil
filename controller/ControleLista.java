@@ -28,7 +28,7 @@ public class ControleLista {
     private CRUDLista crudLista;
     private CRUDProduto crudProduto;
     private CRUDListaProduto crudListaProduto;
-    private CRUDUsuario crudUsuario; // ATRIBUTO ADICIONADO
+    private CRUDUsuario crudUsuario;
     private VisaoLista visaoLista;
     private VisaoUsuario visaoUsuario;
 
@@ -64,22 +64,17 @@ public class ControleLista {
         String opcao;
         do {
             try {
-                // Lê todas as listas pertencentes ao usuário e as ordena
                 List<Lista> minhasListas = crudLista.readAllByUser(usuarioLogado.getID());
                 Collections.sort(minhasListas);
                 
-                // Mostra as listas e captura a opção do usuário
                 opcao = visaoLista.mostrarListas(minhasListas, usuarioLogado.getNome()).toLowerCase().trim();
                 
                 if (opcao.equals("n")) {
-                    // Opção para criar uma nova lista
                     criarNovaLista(usuarioLogado);
                 } else if (!opcao.equals("r")) {
-                    // Tenta processar a opção como um índice numérico da lista
                     try {
                         int indice = Integer.parseInt(opcao) - 1;
                         if (indice >= 0 && indice < minhasListas.size()) {
-                            // Se o índice for válido, abre o menu de detalhes da lista selecionada
                             menuDetalhesLista(minhasListas.get(indice), usuarioLogado);
                         } else {
                             visaoUsuario.mostrarMensagem("\nERRO: Opção numérica inválida!");
@@ -93,7 +88,7 @@ public class ControleLista {
             } catch (Exception e) {
                 visaoUsuario.mostrarMensagem("\nERRO ao gerir as listas: " + e.getMessage());
                 e.printStackTrace();
-                opcao = "r"; // Força a saída em caso de erro grave
+                opcao = "r";
             }
         } while (!opcao.equals("r"));
     }
@@ -119,7 +114,6 @@ public class ControleLista {
                     alterarLista(lista);
                     break;
                 case "3":
-                    // Se a lista for excluída com sucesso, o método retorna true e encerra o loop.
                     if (excluirLista(lista)) {
                         return;
                     }
@@ -209,17 +203,15 @@ public class ControleLista {
      */
     private void menuAcrescentarProduto(Lista lista) {
         String opcao = visaoLista.menuAcrescentarProduto();
-        if(opcao.equals("1")) { // Adicionar por GTIN
+        if(opcao.equals("1")) {
             String gtin = visaoLista.pedirGtinParaAdicionar();
             try {
                 Produto p = crudProduto.readByGtin(gtin);
                 if(p != null) {
                     if (p.isAtivo()) {
-                        // Verifica se o produto já não está na lista
                         if (crudListaProduto.findAssociacao(lista.getID(), p.getID()) != null) {
                             visaoUsuario.mostrarMensagem("ERRO: O produto \"" + p.getNome() + "\" já está nesta lista.");
                         } else {
-                            // Pede a quantidade e observações para a nova associação
                             int qtd = visaoLista.pedirNovaQuantidade(1);
                             String obs = visaoLista.pedirNovasObservacoes("");
                             ListaProduto lp = new ListaProduto(-1, lista.getID(), p.getID(), qtd, obs);
@@ -235,7 +227,7 @@ public class ControleLista {
             } catch(Exception e) {
                 visaoUsuario.mostrarMensagem("ERRO ao adicionar produto: " + e.getMessage());
             }
-        } else if (opcao.equals("2")) { // Adicionar por nome (informativo)
+        } else if (opcao.equals("2")) {
             visaoUsuario.mostrarMensagem("Para adicionar um produto, utilize a busca por GTIN.\nConsulte o menu 'Produtos' no menu principal para encontrar o GTIN desejado.");
         }
         visaoUsuario.pausa();
@@ -271,7 +263,7 @@ public class ControleLista {
                         if(visaoLista.confirmarRemocaoProduto(produto.getNome())) {
                             crudListaProduto.delete(listaProduto.getID());
                             visaoUsuario.mostrarMensagem("Produto removido da lista!");
-                            return; // Retorna para o menu anterior após a remoção
+                            return;
                         }
                         break;
                     case "r":
@@ -339,10 +331,8 @@ public class ControleLista {
     private boolean excluirLista(Lista lista) {
         if (visaoLista.confirmarExclusao(lista.getNome())) {
             try {
-                // Primeiro, deleta todas as associações na tabela ListaProduto
                 crudListaProduto.deleteByLista(lista.getID());
 
-                // Depois, deleta a lista
                 if (crudLista.delete(lista.getID())) {
                     visaoUsuario.mostrarMensagem("\nLista \"" + lista.getNome() + "\" e todas as suas associações foram excluídas com sucesso.");
                     visaoUsuario.pausa();

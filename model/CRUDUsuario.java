@@ -82,7 +82,6 @@ public class CRUDUsuario extends Arquivo<Usuario> {
     public Usuario readByEmail(String email) throws Exception {
         ParEmailId par = indiceEmail.read(email.hashCode());
 
-        // Verificação anti-colisão
         if (par != null && par.getEmail().equals(email)) {
             return super.read(par.getId());
         }

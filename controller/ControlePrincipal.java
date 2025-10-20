@@ -42,15 +42,14 @@ public class ControlePrincipal {
      * arquivos de banco de dados).
      */
     public ControlePrincipal() throws Exception {
+        this.crudUsuario = new CRUDUsuario();
+        this.crudLista = new CRUDLista();
+        this.crudProduto = new CRUDProduto();
+        this.crudListaProduto = new CRUDListaProduto();
+        
         this.visaoUsuario = new VisaoUsuario();
-        
-        CRUDUsuario crudUsuario = new CRUDUsuario();
-        CRUDLista crudLista = new CRUDLista();
-        CRUDProduto crudProduto = new CRUDProduto();
-        CRUDListaProduto crudListaProduto = new CRUDListaProduto();
-        
         this.controleUsuario = new ControleUsuario(crudUsuario, crudLista);
-        this.controleLista = new ControleLista(crudLista, crudProduto, crudListaProduto, crudUsuario); 
+        this.controleLista = new ControleLista(crudLista, crudProduto, crudListaProduto, crudUsuario);
         this.controleProduto = new ControleProduto(crudProduto, crudLista, crudListaProduto);
         
         this.usuarioLogado = null;
@@ -76,7 +75,6 @@ public class ControlePrincipal {
                     if(usuarioLogado != null) {
                         menuLogado();
                     } else {
-                        // A pausa só é necessária se o login falhar.
                         visaoUsuario.pausa();
                     }
                     break;
@@ -94,12 +92,10 @@ public class ControlePrincipal {
             }
         } while (!opcao.equals("s"));
         
-        // Fecha todas as conexões com os arquivos de forma segura e centralizada.
         crudUsuario.close();
         crudLista.close();
         crudProduto.close();
-        crudListaProduto.close(); 
-        teclado.close();
+        crudListaProduto.close();
     }
 
     /**
@@ -113,6 +109,7 @@ public class ControlePrincipal {
      */
     private void menuLogado() throws Exception {
         String opcao;
+        Scanner teclado = new Scanner(System.in); // Scanner local para este menu
         
         do {
             System.out.println("\n-----------------");
@@ -125,7 +122,7 @@ public class ControlePrincipal {
             System.out.println("\n(S) Sair (Logout)");
             System.out.print("\nOpção: ");
             
-            opcao = teclado.nextLine().toLowerCase();
+            opcao = teclado.nextLine().toLowerCase().trim();
             boolean contaExcluida = false;
 
             switch (opcao) {
@@ -159,4 +156,7 @@ public class ControlePrincipal {
 
         } while (usuarioLogado != null && !opcao.equals("s"));
     }
+
+    // não pode fechar o scanner aqui para evitar fechar o System.in
+    // ignorar o warning!
 }

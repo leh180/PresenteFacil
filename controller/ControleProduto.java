@@ -62,7 +62,6 @@ public class ControleProduto {
                     buscarProdutoPorGtin(usuarioLogado);
                     break;
                 case "2":
-                    // Mostra apenas produtos ATIVOS na listagem principal
                     listarProdutosPaginado(usuarioLogado, false); 
                     break;
                 case "3":
@@ -92,7 +91,6 @@ public class ControleProduto {
         String opcao;
         do {
             try {
-                // Consulta Cruzada para encontrar as listas
                 List<ListaProduto> associacoes = crudListaProduto.readAllByProduto(produto.getID());
                 List<Lista> listasDoUsuario = new ArrayList<>();
                 int countOutrasListas = 0;
@@ -109,7 +107,6 @@ public class ControleProduto {
                 }
                 Collections.sort(listasDoUsuario, Comparator.comparing(Lista::getNome, String.CASE_INSENSITIVE_ORDER));
 
-                // A visão exibe os detalhes e o menu de ações apropriado (Inativar/Reativar)
                 opcao = visaoProduto.mostrarDetalhesProduto(produto, listasDoUsuario, countOutrasListas);
 
                 switch (opcao) {
@@ -122,7 +119,6 @@ public class ControleProduto {
                         } else {
                             reativarProduto(produto);
                         }
-                        // Sai do menu de detalhes para forçar o recarregamento do estado.
                         return; 
                     case "r":
                         break;
@@ -133,8 +129,8 @@ public class ControleProduto {
                 }
             } catch(Exception e) {
                 visaoUsuario.mostrarMensagem("ERRO ao gerir o produto: " + e.getMessage());
-                e.printStackTrace(); // Útil para depuração
-                opcao = "r"; // Força a saída em caso de erro.
+                e.printStackTrace();
+                opcao = "r";
             }
         } while (!opcao.equals("r"));
     }
@@ -148,7 +144,6 @@ public class ControleProduto {
      */
     private void listarProdutosPaginado(Usuario usuarioLogado, boolean incluirInativos) {
         try {
-            // Chama o método correto do CRUD com o filtro
             List<Produto> produtosParaListar = crudProduto.readAllProdutos(incluirInativos); 
             Collections.sort(produtosParaListar, Comparator.comparing(Produto::getNome, String.CASE_INSENSITIVE_ORDER));
 
@@ -162,7 +157,6 @@ public class ControleProduto {
                 int fim = Math.min(inicio + ITENS_POR_PAGINA, produtosParaListar.size());
                 List<Produto> produtosPagina = produtosParaListar.subList(inicio, fim);
 
-                // A visão agora só exibe o nome, sem "(INATIVADO)" para a lista principal
                 opcao = visaoProduto.mostrarListagemPaginada(produtosPagina, paginaAtual, totalPaginas); 
 
                 switch (opcao) {
@@ -178,9 +172,7 @@ public class ControleProduto {
                         try {
                             int indice = Integer.parseInt(opcao) - 1;
                             if (indice >= 0 && indice < produtosPagina.size()) {
-                                // Chama o menu de gestão para o produto selecionado
                                 gerenciarProduto(produtosPagina.get(indice), usuarioLogado);
-                                // Força recarregamento da lista ao voltar, caso algo tenha mudado (ex: reativação)
                                 listarProdutosPaginado(usuarioLogado, incluirInativos); 
                                 return; 
                             } else {
@@ -277,7 +269,7 @@ public class ControleProduto {
         }
         if (visaoProduto.confirmarAcao("inativar", produto.getNome())) {
             try {
-                if (crudProduto.delete(produto.getID())) { // delete() inativa o produto
+                if (crudProduto.delete(produto.getID())) {
                     visaoUsuario.mostrarMensagem("\nProduto inativado com sucesso!");
                 } else {
                     visaoUsuario.mostrarMensagem("\nFalha ao inativar o produto.");

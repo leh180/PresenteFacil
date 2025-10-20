@@ -155,7 +155,6 @@ public class VisaoUsuario {
         String email = teclado.nextLine();
         if (email.isEmpty()) email = usuarioAtual.getEmail();
         
-        // Retorna um usuário com os dados novos, mas sem alterar senha/pergunta.
         return new Usuario(usuarioAtual.getID(), nome, email, "", "", "");
     }
     

@@ -22,12 +22,6 @@ public class ParUsuarioLista implements RegistroArvoreBMais<ParUsuarioLista> {
 
     private int idUsuario;
     private int idLista;
-    
-    /**
-     * Tamanho fixo do registro em bytes.
-     * (4 bytes para idUsuario) + (4 bytes para idLista).
-     * Total: 8 bytes.
-     */
     private final short TAMANHO = 8;
 
     /**
@@ -139,12 +133,10 @@ public class ParUsuarioLista implements RegistroArvoreBMais<ParUsuarioLista> {
         if (this.idUsuario < obj.idUsuario) return -1;
         if (this.idUsuario > obj.idUsuario) return 1;
         
-        // Lógica de busca parcial
         if (this.idLista == -1 || obj.idLista == -1) {
             return 0; 
         }
 
-        // Comparação completa (desempate)
         if (this.idLista < obj.idLista) return -1;
         if (this.idLista > obj.idLista) return 1;
 

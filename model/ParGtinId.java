@@ -20,12 +20,6 @@ public class ParGtinId implements RegistroHashExtensivel {
 
     private String gtin;
     private int id;
-    
-    /**
-     * Tamanho fixo do registro em bytes.
-     * (4 bytes para o ID int) + (20 caracteres * 2 bytes/char = 40 bytes).
-     * Total: 44 bytes.
-     */
     public final short SIZE = 44;
 
     /**
@@ -117,7 +111,6 @@ public class ParGtinId implements RegistroHashExtensivel {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeInt(this.id);
-        // Escreve a string com tamanho fixo (20 chars) para garantir consistência
         dos.writeChars(String.format("%-20.20s", this.gtin));
         return baos.toByteArray();
     }
