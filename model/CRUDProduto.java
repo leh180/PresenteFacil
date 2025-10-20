@@ -54,11 +54,13 @@ public class CRUDProduto extends Arquivo<Produto> {
      */
     @Override
     public int create(Produto produto) throws Exception {
-        produto.setAtivo(true);
+        produto.setAtivo(true); 
         int id = super.create(produto);
         produto.setID(id);
 
-        indiceGtin.create(new ParGtinId(produto.getGtin(), id));
+        if (produto.isAtivo()) {
+           indiceGtin.create(new ParGtinId(produto.getGtin(), id));
+        }
         return id;
     }
 
@@ -102,13 +104,33 @@ public class CRUDProduto extends Arquivo<Produto> {
             return false;
         }
 
+        // Realiza a atualização no ficheiro principal primeiro
         if (super.update(novoProduto)) {
-            // Remove o índice do estado antigo
-            indiceGtin.delete(produtoAntigo.getGtin().hashCode());
+            String gtinAntigo = produtoAntigo.getGtin();
+            String gtinNovo = novoProduto.getGtin();
+            boolean eraAtivo = produtoAntigo.isAtivo();
+            boolean ehAtivo = novoProduto.isAtivo();
 
-            // Se o novo estado for 'ativo', cria o índice para o novo GTIN
-            if (novoProduto.isAtivo()) {
-                indiceGtin.create(new ParGtinId(novoProduto.getGtin(), novoProduto.getID()));
+            // CASO 1: GTIN mudou
+            if (!gtinAntigo.equals(gtinNovo)) {
+                // Remove o índice antigo (se existia)
+                indiceGtin.delete(gtinAntigo.hashCode());
+                // Adiciona o novo índice (apenas se o produto estiver ativo)
+                if (ehAtivo) {
+                    indiceGtin.create(new ParGtinId(gtinNovo, novoProduto.getID()));
+                }
+            }
+            // CASO 2: GTIN não mudou, mas o estado de ativação sim
+            else {
+                // Se foi REATIVADO, adiciona de volta ao índice
+                if (!eraAtivo && ehAtivo) {
+                    indiceGtin.create(new ParGtinId(gtinNovo, novoProduto.getID()));
+                }
+                // Se foi INATIVADO, remove do índice
+                else if (eraAtivo && !ehAtivo) {
+                    indiceGtin.delete(gtinNovo.hashCode()); // Usa o gtinNovo que é igual ao antigo
+                }
+                // Se nem GTIN nem 'ativo' mudaram, o índice não precisa de ser tocado.
             }
             return true;
         }
@@ -133,9 +155,7 @@ public class CRUDProduto extends Arquivo<Produto> {
         }
 
         produto.setAtivo(false);
-
-        // Chama o update deste próprio objeto (CRUDProduto) para garantir
-        // que a lógica de remoção do índice seja executada.
+        
         return this.update(produto);
     }
 
@@ -149,7 +169,7 @@ public class CRUDProduto extends Arquivo<Produto> {
      * @throws Exception se ocorrer um erro durante a leitura do arquivo.
      */
     public List<Produto> readAll(boolean incluirInativos) throws Exception {
-        List<Produto> todosProdutos = new ArrayList<>();
+        List<Produto> produtos = new ArrayList<>();
         int ultimoID = 0;
         
         this.arquivo.seek(0);
@@ -157,13 +177,13 @@ public class CRUDProduto extends Arquivo<Produto> {
         
         for (int i = 1; i <= ultimoID; i++) {
             Produto p = super.read(i);
-            if (p != null) { // super.read() retorna null para IDs apagados
+            if (p != null) {
                 if (incluirInativos || p.isAtivo()) {
-                    todosProdutos.add(p);
+                    produtos.add(p);
                 }
             }
         }
-        return todosProdutos;
+        return produtos;
     }
 
     /**

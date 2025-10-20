@@ -91,23 +91,23 @@ Abaixo estão as principais telas do sistema.
 
 * Menu Principal:
 
-![Tela Inicial](imagens/TelaInical.png)
+![Menu Principal](imagens/MenuPrincipal.png)
 
 * Menu de Produtos:
 
-![Menu de Produtos](imagens/TelaInical.png)
+![Menu de Produtos](imagens/MenuProdutos.png)
 
 * Listagem Paginada de Produtos:
 
-![Listagem Paginada de Produtos](imagens/TelaInical.png)
+![Listagem Paginada de Produtos](imagens/ListagemPaginadaProdutos.png)
 
 * Detalhes do Produto:
 
-![Detalhes do Produto](imagens/TelaInical.png)
+![Detalhes do Produto](imagens/DetalhesProduto.png)
 
 * Gerenciar Produtos na Lista:
 
-![Gerenciar Produtos na Lista](imagens/TelaInical.png)
+![Gerenciar Produtos na Lista](imagens/GerenciarProdutosLista.png)
 
 ---
 ### ⚙️ Arquitetura e Principais Classes 

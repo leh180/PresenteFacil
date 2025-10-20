@@ -24,6 +24,9 @@ public class ControlePrincipal {
     private ControleProduto controleProduto;
     private Usuario usuarioLogado;
     private Scanner teclado;
+    private CRUDUsuario crudUsuario;
+    private CRUDLista crudLista;
+    private CRUDProduto crudProduto;
     private CRUDListaProduto crudListaProduto;
 
     /**
@@ -39,13 +42,12 @@ public class ControlePrincipal {
      * arquivos de banco de dados).
      */
     public ControlePrincipal() throws Exception {
+        this.crudUsuario = new CRUDUsuario();
+        this.crudLista = new CRUDLista();
+        this.crudProduto = new CRUDProduto();
+        this.crudListaProduto = new CRUDListaProduto();
+        
         this.visaoUsuario = new VisaoUsuario();
-        
-        CRUDUsuario crudUsuario = new CRUDUsuario();
-        CRUDLista crudLista = new CRUDLista();
-        CRUDProduto crudProduto = new CRUDProduto();
-        this.crudListaProduto = new CRUDListaProduto(); 
-        
         this.controleUsuario = new ControleUsuario(crudUsuario, crudLista);
         this.controleLista = new ControleLista(crudLista, crudProduto, crudListaProduto);
         this.controleProduto = new ControleProduto(crudProduto, crudLista, crudListaProduto);
@@ -73,6 +75,7 @@ public class ControlePrincipal {
                     if(usuarioLogado != null) {
                         menuLogado();
                     } else {
+                        // A pausa só é necessária se o login falhar.
                         visaoUsuario.pausa();
                     }
                     break;
@@ -90,10 +93,11 @@ public class ControlePrincipal {
             }
         } while (!opcao.equals("s"));
         
-        controleUsuario.close();
-        controleLista.close();
-        controleProduto.close();
-        this.crudListaProduto.close(); 
+        // Fecha todas as conexões com os arquivos de forma segura e centralizada.
+        crudUsuario.close();
+        crudLista.close();
+        crudProduto.close();
+        crudListaProduto.close(); 
         teclado.close();
     }
 
@@ -133,6 +137,7 @@ public class ControlePrincipal {
                     controleLista.menuMinhasListas(usuarioLogado);
                     break;
                 case "3":
+                    // O nome do método no seu ControleProduto é 'menuProdutos'
                     controleProduto.menuProdutos(usuarioLogado);
                     break;
                 case "4":

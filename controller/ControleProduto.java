@@ -191,22 +191,77 @@ public class ControleProduto {
         }
     }
 
-    /**
+     /**
      * Orquestra o processo de cadastro de um novo produto no sistema.
+     * Pede os dados ao utilizador, verifica a duplicidade de GTIN e, se for
+     * único, cria o produto.
      */
-    private void cadastrarNovoProduto() { /* ... (Implementação do método) ... */ }
+    private void cadastrarNovoProduto() {
+        try {
+            Produto novoProduto = visaoProduto.lerDadosNovoProduto();
+
+            // Regra de Negócio: Verifica se o GTIN já existe antes de criar
+            if (crudProduto.readByGtin(novoProduto.getGtin()) != null) {
+                visaoUsuario.mostrarMensagem("\nERRO: O GTIN " + novoProduto.getGtin() + " já está cadastrado!");
+            } else {
+                int id = crudProduto.create(novoProduto);
+                visaoUsuario.mostrarMensagem(
+                        "\nProduto \"" + novoProduto.getNome() + "\" (ID: " + id + ") cadastrado com sucesso!");
+            }
+        } catch (Exception e) {
+            visaoUsuario.mostrarMensagem("\nERRO ao cadastrar produto: " + e.getMessage());
+            e.printStackTrace();
+        }
+        visaoUsuario.pausa();
+    }
     
     /**
      * Permite a busca de um produto específico pelo seu código GTIN.
+     * Se o produto for encontrado, encaminha para o menu de gestão de detalhes.
      * @param usuarioLogado O usuário que realiza a busca.
      */
-    private void buscarProdutoPorGtin(Usuario usuarioLogado) { /* ... (Implementação do método) ... */ }
+    private void buscarProdutoPorGtin(Usuario usuarioLogado) {
+        String gtin = visaoProduto.lerGtinBusca();
+        try {
+            Produto produto = crudProduto.readByGtin(gtin);
+            if (produto != null) {
+                // Se o produto foi encontrado, chama o menu de detalhes para geri-lo
+                gerenciarProduto(produto, usuarioLogado);
+            } else {
+                visaoUsuario.mostrarMensagem("\nNenhum produto encontrado com o GTIN \"" + gtin + "\".");
+                visaoUsuario.pausa();
+            }
+        } catch (Exception e) {
+            visaoUsuario.mostrarMensagem("\nERRO ao buscar produto: " + e.getMessage());
+            e.printStackTrace();
+            visaoUsuario.pausa();
+        }
+    }
     
     /**
-     * Controla a lógica para alterar os dados de um produto existente.
+     * Controla a lógica para alterar os dados de um produto existente
+     * (nome e descrição).
      * @param produto O produto a ser modificado.
      */
-    private void alterarProduto(Produto produto) { /* ... (Implementação do método) ... */ }
+    private void alterarProduto(Produto produto) {
+        try {
+            Produto dadosAlterados = visaoProduto.lerDadosAlteracao(produto);
+            
+            // Atualiza o objeto original com os novos dados
+            produto.setNome(dadosAlterados.getNome());
+            produto.setDescricao(dadosAlterados.getDescricao());
+
+            if (crudProduto.update(produto)) {
+                visaoUsuario.mostrarMensagem("\nProduto alterado com sucesso!");
+            } else {
+                visaoUsuario.mostrarMensagem("\nFalha ao alterar o produto.");
+            }
+        } catch (Exception e) {
+            visaoUsuario.mostrarMensagem("\nERRO ao alterar produto: " + e.getMessage());
+            e.printStackTrace();
+        }
+        visaoUsuario.pausa();
+    }
 
     /**
      * Aplica a regra de negócio para inativar um produto. Um produto só pode
