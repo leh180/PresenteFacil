@@ -1,62 +1,81 @@
 package controller;
 
-import java.util.*;
-import model.*;
-import view.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import model.CRUDLista;
+import model.CRUDListaProduto;
+import model.CRUDProduto;
+import model.Lista;
+import model.ListaProduto;
+import model.Produto;
+import model.Usuario;
+import view.VisaoLista;
+import view.VisaoUsuario;
+import view.Pair;
 
 /**
- * A classe 'ControleLista' é responsável por gerir toda a lógica de negócio
- * relacionada às listas, atuando como o intermediário entre as classes de modelo (dados)
- * e as classes de visão (interface com o utilizador).
+ * A classe ControleLista é responsável por gerenciar a lógica de negócio
+ * relacionada às listas de compras, interagindo com a camada de modelo (CRUDs)
+ * e a camada de visão (VisaoLista, VisaoUsuario).
+ *
+ * @author Ana, Bruno, João, Leticia e Miguel
+ * @version 1.5
  */
 public class ControleLista {
 
-    // ------------------------------------------ Atributos da Classe ------------------------------------------
-    
     private CRUDLista crudLista;
+    private CRUDProduto crudProduto;
+    private CRUDListaProduto crudListaProduto;
     private VisaoLista visaoLista;
     private VisaoUsuario visaoUsuario;
 
-    // ------------------------------------------ Construtor ------------------------------------------
-    
     /**
-     * Construtor que recebe a instância de CRUDLista (Injeção de Dependência).
-     * Garante que toda a aplicação partilhe a mesma ligação com os ficheiros.
-     * @param crudLista A instância de CRUD para as listas.
+     * Construtor da classe ControleLista.
+     * Inicializa os objetos CRUD necessários para a manipulação dos dados
+     * e as classes de visão para interação com o usuário.
+     *
+     * @param crudL Instância de CRUDLista para operações com listas.
+     * @param crudP Instância de CRUDProduto para operações com produtos.
+     * @param crudLP Instância de CRUDListaProduto para operações com a tabela associativa.
      */
-    public ControleLista(CRUDLista crudLista) {
-        this.crudLista = crudLista;
+    public ControleLista(CRUDLista crudL, CRUDProduto crudP, CRUDListaProduto crudLP) {
+        this.crudLista = crudL;
+        this.crudProduto = crudP;
+        this.crudListaProduto = crudLP;
         this.visaoLista = new VisaoLista();
         this.visaoUsuario = new VisaoUsuario();
     }
 
-    // ------------------------------------------ Métodos de Menu ------------------------------------------
     
     /**
-     * Menu principal para um utilizador gerir as suas próprias listas.
-     * Este método é o ponto de entrada para a gestão de listas pessoais.
-     * Ele lê todas as listas do utilizador, exibe-as de forma ordenada e
-     * direciona para as ações de criação ou gestão de uma lista específica.
-     * @param usuarioLogado O utilizador que está com a sessão ativa.
+     * Exibe o menu principal de "Minhas Listas" para um usuário logado.
+     * Permite ao usuário visualizar suas listas, criar uma nova lista,
+     * selecionar uma lista para ver detalhes ou retornar ao menu anterior.
+     * O método trata internamente as exceções de banco de dados e de entrada do usuário.
+     *
+     * @param usuarioLogado O objeto do usuário que está com a sessão ativa.
      */
     public void menuMinhasListas(Usuario usuarioLogado) {
         String opcao;
         do {
             try {
+                // Lê todas as listas pertencentes ao usuário e as ordena
                 List<Lista> minhasListas = crudLista.readAllByUser(usuarioLogado.getID());
-                // Ordena as listas por ordem alfabética do nome, ignorando maiúsculas/minúsculas.
-                Collections.sort(minhasListas, Comparator.comparing(Lista::getNome, String.CASE_INSENSITIVE_ORDER));
+                Collections.sort(minhasListas);
                 
-                // Lê a opção do utilizador e converte-a imediatamente para minúsculas.
-                opcao = visaoLista.mostrarListas(minhasListas, usuarioLogado.getNome()).toLowerCase();
+                // Mostra as listas e captura a opção do usuário
+                opcao = visaoLista.mostrarListas(minhasListas, usuarioLogado.getNome()).toLowerCase().trim();
                 
-                // Agora, todas as comparações são feitas com a versão em minúsculas.
                 if (opcao.equals("n")) {
+                    // Opção para criar uma nova lista
                     criarNovaLista(usuarioLogado);
                 } else if (!opcao.equals("r")) {
+                    // Tenta processar a opção como um índice numérico da lista
                     try {
                         int indice = Integer.parseInt(opcao) - 1;
                         if (indice >= 0 && indice < minhasListas.size()) {
+                            // Se o índice for válido, abre o menu de detalhes da lista selecionada
                             menuDetalhesLista(minhasListas.get(indice), usuarioLogado);
                         } else {
                             visaoUsuario.mostrarMensagem("\nERRO: Opção numérica inválida!");
@@ -70,57 +89,58 @@ public class ControleLista {
             } catch (Exception e) {
                 visaoUsuario.mostrarMensagem("\nERRO ao gerir as listas: " + e.getMessage());
                 e.printStackTrace();
-                opcao = "r"; // Força a saída em caso de erro grave.
+                opcao = "r"; // Força a saída em caso de erro grave
             }
-        } while (!opcao.equals("r")); // A comparação é feita com 'r' minúsculo.
+        } while (!opcao.equals("r"));
     }
 
     /**
-     * Menu para ver os detalhes de uma lista específica e geri-la.
-     * @param lista A lista selecionada.
-     * @param usuarioLogado O utilizador dono da lista.
+     * Exibe o menu de detalhes de uma lista específica.
+     * Oferece opções para gerenciar produtos, alterar dados da lista,
+     * excluí-la ou retornar.
+     *
+     * @param lista A lista cujos detalhes serão exibidos e gerenciados.
+     * @param usuarioLogado O usuário logado, para contextualizar a visão.
      */
     private void menuDetalhesLista(Lista lista, Usuario usuarioLogado) {
         String opcao;
         do {
-            // A CORREÇÃO ESTÁ AQUI: Adicionamos .trim() para remover espaços
-            // e garantimos que a conversão para minúsculas acontece sempre.
             opcao = visaoLista.mostrarDetalhesLista(lista, usuarioLogado.getNome(), true).trim().toLowerCase();
             
             switch (opcao) {
                 case "1":
-                    visaoUsuario.mostrarMensagem("\nFuncionalidade a ser implementada no Trabalho Prático 2.");
-                    visaoUsuario.pausa();
+                    menuGerenciarProdutosDaLista(lista);
                     break;
                 case "2":
                     alterarLista(lista);
                     break;
                 case "3":
+                    // Se a lista for excluída com sucesso, o método retorna true e encerra o loop.
                     if (excluirLista(lista)) {
-                        return; // Sai imediatamente do método se a lista for excluída
+                        return;
                     }
                     break;
                 case "r":
-                    // Não faz nada, apenas permite que a condição do loop termine a execução
                     break;
                 default:
                     visaoUsuario.mostrarMensagem("\nOpção inválida!");
                     visaoUsuario.pausa();
                     break;
             }
-
-        } while (!opcao.equals("r")); // A condição de saída do loop está correta
+        } while (!opcao.equals("r"));
     }
 
     /**
-     * Fluxo para procurar uma lista pública usando o seu código.
+     * Permite ao usuário procurar por uma lista pública utilizando seu código único.
+     * Exibe os detalhes da lista se encontrada, caso contrário, informa o usuário.
      */
     public void menuProcurarLista() {
         String codigo = visaoLista.pedirCodigo();
         try {
             Lista lista = crudLista.readByCodigo(codigo);
             if (lista != null) {
-                visaoLista.mostrarDetalhesLista(lista, "Não revelado", false);
+                // Mostra os detalhes da lista como "Pública" e sem opções de gerenciamento
+                visaoLista.mostrarDetalhesLista(lista, "Pública", false);
             } else {
                 visaoUsuario.mostrarMensagem("\nNenhuma lista encontrada com o código \"" + codigo + "\".");
             }
@@ -130,17 +150,151 @@ public class ControleLista {
         visaoUsuario.pausa();
     }
 
-    // ------------------------------------------ Métodos de Ação (CRUD) ------------------------------------------
+    /**
+     * Controla o menu de gerenciamento de produtos dentro de uma lista específica.
+     * Permite visualizar os produtos, adicionar novos ou selecionar um produto
+     * para ver mais detalhes.
+     *
+     * @param lista A lista cujos produtos serão gerenciados.
+     */
+    private void menuGerenciarProdutosDaLista(Lista lista) {
+        String opcao;
+        do {
+            try {
+                // Busca todas as associações (ListaProduto) para o ID da lista
+                List<ListaProduto> associacoes = crudListaProduto.readAllByLista(lista.getID());
+                List<Pair<Produto, ListaProduto>> produtosParaExibir = new ArrayList<>();
+                
+                // Para cada associação, busca o produto correspondente
+                for(ListaProduto lp : associacoes) {
+                    Produto p = crudProduto.read(lp.getIdProduto());
+                    if (p != null) {
+                        // Cria um par contendo o Produto e sua associação (quantidade, observações)
+                        produtosParaExibir.add(new Pair<>(p, lp));
+                    }
+                }
+                
+                opcao = visaoLista.menuGerenciarProdutosDaLista(produtosParaExibir, lista.getNome());
+
+                if (opcao.equals("a")) {
+                    menuAcrescentarProduto(lista);
+                } else if (!opcao.equals("r")) {
+                    try {
+                        int indice = Integer.parseInt(opcao) - 1;
+                        if(indice >= 0 && indice < produtosParaExibir.size()) {
+                            // Abre o menu de detalhes para o produto selecionado na lista
+                            Pair<Produto, ListaProduto> par = produtosParaExibir.get(indice);
+                            menuDetalhesProdutoNaLista(par.first, par.second);
+                        } else {
+                            visaoUsuario.mostrarMensagem("Opção numérica inválida!");
+                        }
+                    } catch (NumberFormatException e) {
+                        visaoUsuario.mostrarMensagem("Opção inválida!");
+                    }
+                }
+            } catch (Exception e) {
+                visaoUsuario.mostrarMensagem("ERRO ao gerir produtos da lista: " + e.getMessage());
+                opcao = "r";
+            }
+        } while(!opcao.equals("r"));
+    }
 
     /**
-     * Realiza o processo de criação de uma nova lista.
-     * @param usuarioLogado O utilizador que está a criar a lista.
+     * Gerencia a lógica para adicionar um novo produto a uma lista.
+     * Atualmente, a adição é feita buscando um produto existente pelo seu GTIN.
+     *
+     * @param lista A lista à qual o produto será adicionado.
+     */
+    private void menuAcrescentarProduto(Lista lista) {
+        String opcao = visaoLista.menuAcrescentarProduto();
+        if(opcao.equals("1")) { // Adicionar por GTIN
+            String gtin = visaoLista.pedirGtinParaAdicionar();
+            try {
+                Produto p = crudProduto.readByGtin(gtin);
+                if(p != null) {
+                    if (p.isAtivo()) {
+                        // Verifica se o produto já não está na lista
+                        if (crudListaProduto.findAssociacao(lista.getID(), p.getID()) != null) {
+                            visaoUsuario.mostrarMensagem("ERRO: O produto \"" + p.getNome() + "\" já está nesta lista.");
+                        } else {
+                            // Pede a quantidade e observações para a nova associação
+                            int qtd = visaoLista.pedirNovaQuantidade(1);
+                            String obs = visaoLista.pedirNovasObservacoes("");
+                            ListaProduto lp = new ListaProduto(-1, lista.getID(), p.getID(), qtd, obs);
+                            crudListaProduto.create(lp);
+                            visaoUsuario.mostrarMensagem("Produto \"" + p.getNome() + "\" adicionado à lista!");
+                        }
+                    } else {
+                        visaoUsuario.mostrarMensagem("ERRO: Este produto está inativo e não pode ser adicionado.");
+                    }
+                } else {
+                    visaoUsuario.mostrarMensagem("Nenhum produto encontrado com o GTIN informado.");
+                }
+            } catch(Exception e) {
+                visaoUsuario.mostrarMensagem("ERRO ao adicionar produto: " + e.getMessage());
+            }
+        } else if (opcao.equals("2")) { // Adicionar por nome (informativo)
+            visaoUsuario.mostrarMensagem("Para adicionar um produto, utilize a busca por GTIN.\nConsulte o menu 'Produtos' no menu principal para encontrar o GTIN desejado.");
+        }
+        visaoUsuario.pausa();
+    }
+    
+    /**
+     * Exibe o menu de detalhes de um produto específico dentro de uma lista.
+     * Permite ao usuário alterar a quantidade, as observações ou remover
+     * o produto da lista.
+     *
+     * @param produto O objeto Produto a ser gerenciado.
+     * @param listaProduto O objeto de associação que contém quantidade e observações.
+     */
+    private void menuDetalhesProdutoNaLista(Produto produto, ListaProduto listaProduto) {
+        String opcao;
+        do {
+            try {
+                opcao = visaoLista.mostrarDetalhesProdutoNaLista(produto, listaProduto);
+                switch(opcao) {
+                    case "1": // Alterar quantidade
+                        int novaQtd = visaoLista.pedirNovaQuantidade(listaProduto.getQuantidade());
+                        listaProduto.setQuantidade(novaQtd);
+                        crudListaProduto.update(listaProduto);
+                        visaoUsuario.mostrarMensagem("Quantidade alterada com sucesso!");
+                        break;
+                    case "2": // Alterar observações
+                        String novaObs = visaoLista.pedirNovasObservacoes(listaProduto.getObservacoes());
+                        listaProduto.setObservacoes(novaObs);
+                        crudListaProduto.update(listaProduto);
+                        visaoUsuario.mostrarMensagem("Observações alteradas com sucesso!");
+                        break;
+                    case "3": // Remover produto da lista
+                        if(visaoLista.confirmarRemocaoProduto(produto.getNome())) {
+                            crudListaProduto.delete(listaProduto.getID());
+                            visaoUsuario.mostrarMensagem("Produto removido da lista!");
+                            return; // Retorna para o menu anterior após a remoção
+                        }
+                        break;
+                    case "r":
+                        break;
+                    default:
+                        visaoUsuario.mostrarMensagem("Opção inválida!");
+                        break;
+                }
+            } catch(Exception e) {
+                visaoUsuario.mostrarMensagem("ERRO ao gerir o produto na lista: " + e.getMessage());
+                opcao = "r";
+            }
+        } while(!opcao.equals("r"));
+    }
+
+    /**
+     * Orquestra a criação de uma nova lista.
+     * Pede os dados da nova lista através da visão e a insere no banco de dados.
+     *
+     * @param usuarioLogado O usuário que será o dono da nova lista.
      */
     private void criarNovaLista(Usuario usuarioLogado) {
         try {
             Lista novaLista = visaoLista.lerDadosNovaLista();
             novaLista.setIdUsuario(usuarioLogado.getID());
-            
             int id = crudLista.create(novaLista);
             visaoUsuario.mostrarMensagem("\nLista \"" + novaLista.getNome() + "\" criada com sucesso! (ID: " + id + ")");
         } catch (Exception e) {
@@ -150,13 +304,13 @@ public class ControleLista {
     }
 
     /**
-     * Realiza o processo de alteração de uma lista existente.
+     * Controla a alteração dos dados de uma lista existente.
+     *
      * @param lista A lista a ser alterada.
      */
     private void alterarLista(Lista lista) {
         try {
             Lista dadosAlterados = visaoLista.lerDadosAlteracaoLista(lista);
-            
             lista.setNome(dadosAlterados.getNome());
             lista.setDescricao(dadosAlterados.getDescricao());
             lista.setDataLimite(dadosAlterados.getDataLimite());
@@ -171,17 +325,24 @@ public class ControleLista {
         }
         visaoUsuario.pausa();
     }
-
+    
     /**
-     * Realiza o processo de exclusão de uma lista.
+     * Gerencia a exclusão de uma lista.
+     * Pede confirmação ao usuário e, se confirmado, remove todas as associações
+     * de produtos e depois a própria lista.
+     *
      * @param lista A lista a ser excluída.
-     * @return `true` se a lista foi excluída com sucesso, `false` caso contrário.
+     * @return {@code true} se a lista foi excluída com sucesso, {@code false} caso contrário.
      */
     private boolean excluirLista(Lista lista) {
         if (visaoLista.confirmarExclusao(lista.getNome())) {
             try {
+                // Primeiro, deleta todas as associações na tabela ListaProduto
+                crudListaProduto.deleteByLista(lista.getID());
+
+                // Depois, deleta a lista
                 if (crudLista.delete(lista.getID())) {
-                    visaoUsuario.mostrarMensagem("\nLista \"" + lista.getNome() + "\" excluída com sucesso.");
+                    visaoUsuario.mostrarMensagem("\nLista \"" + lista.getNome() + "\" e todas as suas associações foram excluídas com sucesso.");
                     visaoUsuario.pausa();
                     return true;
                 } else {
@@ -196,10 +357,13 @@ public class ControleLista {
     }
 
     /**
-     * Fecha as ligações com os ficheiros de dados geridos por este controlador.
+     * Fecha as conexões com o banco de dados através do objeto CRUDLista.
+     * Este método deve ser chamado ao final do ciclo de vida do controller
+     * para liberar os recursos do banco.
+     *
+     * @throws Exception Se ocorrer um erro ao fechar a conexão com o banco de dados.
      */
     public void close() throws Exception {
         crudLista.close();
     }
 }
-

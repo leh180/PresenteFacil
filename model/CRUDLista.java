@@ -9,10 +9,13 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * A classe CRUDLista estende a classe genérica Arquivo e gere todas as 
- * operações de persistência para a entidade Lista.
- * Ela mantém um índice secundário por código (Hash Extensível) para buscas públicas
- * e um índice de relacionamento (Árvore B+) para ligar utilizadores às suas listas.
+ * Gerencia todas as operações de persistência (CRUD) para a entidade Lista.
+ * Estende a classe genérica {@link Arquivo} e mantém índices secundários
+ * para buscas otimizadas por código (Hash Extensível) e por ID de usuário
+ * (Árvore B+).
+ *
+ * @author Ana, Bruno, João, Leticia e Miguel
+ * @version 1.0
  */
 public class CRUDLista extends Arquivo<Lista> {
 
@@ -23,6 +26,14 @@ public class CRUDLista extends Arquivo<Lista> {
 
     // ------------------------------------------ Construtor ------------------------------------------
 
+    /**
+     * Construtor da classe CRUDLista.
+     * Inicializa o arquivo principal de dados ("listas") e os arquivos de
+     * índices secundários (hash para códigos e Árvore B+ para usuários).
+     *
+     * @throws Exception se ocorrer um erro na abertura ou criação dos arquivos
+     * de dados ou índices.
+     */
     public CRUDLista() throws Exception {
         super("listas", Lista.class.getConstructor());
         
@@ -46,8 +57,10 @@ public class CRUDLista extends Arquivo<Lista> {
     // ------------------------------------------ Métodos Privados ------------------------------------------
 
     /**
-     * Gera um código alfanumérico aleatório de 10 caracteres para partilha (simula o NanoID).
-     * @return Uma string com o código gerado.
+     * Gera um código alfanumérico aleatório de 10 caracteres.
+     * Usado para criar códigos compartilháveis únicos para as listas.
+     *
+     * @return Uma {@code String} aleatória de 10 caracteres.
      */
     private String gerarCodigo() {
         String CARACTERES = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -62,10 +75,13 @@ public class CRUDLista extends Arquivo<Lista> {
     // ------------------------------------------ Métodos Públicos (CRUD) ------------------------------------------
 
     /**
-     * Cria uma nova lista, guardando-a no ficheiro principal e atualizando os índices secundários.
-     * @param lista O objeto Lista a ser criado.
-     * @return O ID gerado para a nova lista.
-     * @throws Exception se ocorrer um erro durante a escrita nos ficheiros.
+     * Cria um novo registro de lista no arquivo principal e atualiza os índices.
+     * Gera automaticamente um código compartilhável antes de salvar.
+     *
+     * @param lista O objeto {@link Lista} a ser persistido (sem ID e código).
+     * @return O ID (inteiro) gerado para a nova lista.
+     * @throws Exception se ocorrer um erro durante a escrita no arquivo principal
+     * ou nos índices.
      */
     @Override
     public int create(Lista lista) throws Exception {
@@ -81,10 +97,14 @@ public class CRUDLista extends Arquivo<Lista> {
     }
 
     /**
-     * Procura uma lista pelo seu código compartilhável utilizando o índice de hash.
-     * @param codigo O código a ser procurado.
-     * @return O objeto Lista se encontrado, caso contrário, null.
-     * @throws Exception se ocorrer um erro durante a leitura dos ficheiros.
+     * Busca uma lista específica usando seu código compartilhável.
+     * A busca é otimizada pelo uso do índice de Hash Extensível.
+     *
+     * @param codigo O código compartilhável (String) da lista.
+     * @return O objeto {@link Lista} correspondente, ou {@code null} se não for
+     * encontrado.
+     * @throws Exception se ocorrer um erro durante a leitura do índice ou do
+     * arquivo principal.
      */
     public Lista readByCodigo(String codigo) throws Exception {
         ParCodigoId par = indiceCodigo.read(codigo.hashCode());
@@ -96,11 +116,14 @@ public class CRUDLista extends Arquivo<Lista> {
     }
 
     /**
-     * Encontra todas as listas pertencentes a um utilizador específico.
-     * Utiliza a Árvore B+ para encontrar os IDs e depois lê cada lista do ficheiro.
-     * @param idUsuario O ID do utilizador cujas listas devem ser encontradas.
-     * @return Uma lista de objetos Lista.
-     * @throws Exception se ocorrer um erro durante a leitura dos ficheiros.
+     * Retorna todas as listas associadas a um ID de usuário específico.
+     * A busca é otimizada pelo uso do índice de Árvore B+.
+     *
+     * @param idUsuario O ID (inteiro) do usuário.
+     * @return Uma {@code List<Lista>} contendo todas as listas encontradas
+     * para o usuário (pode estar vazia).
+     * @throws Exception se ocorrer um erro durante a leitura do índice ou do
+     * arquivo principal.
      */
     public List<Lista> readAllByUser(int idUsuario) throws Exception {
         List<Lista> listasDoUsuario = new ArrayList<>();
@@ -120,10 +143,14 @@ public class CRUDLista extends Arquivo<Lista> {
     }
     
     /**
-     * Apaga uma lista do sistema, incluindo as suas entradas nos índices secundários.
-     * @param id O ID da lista a ser apagada.
-     * @return true se a operação for bem-sucedida, false caso contrário.
-     * @throws Exception se ocorrer um erro durante a escrita nos ficheiros.
+     * Exclui (logicamente) uma lista do arquivo principal e remove suas
+     * respectivas entradas dos índices secundários (código e usuário).
+     *
+     * @param id O ID (inteiro) da lista a ser excluída.
+     * @return {@code true} se a exclusão for bem-sucedida em todos os
+     * arquivos, {@code false} caso contrário (ex: lista não encontrada).
+     * @throws Exception se ocorrer um erro durante a atualização dos arquivos
+     * ou índices.
      */
     @Override
     public boolean delete(int id) throws Exception {
@@ -141,4 +168,3 @@ public class CRUDLista extends Arquivo<Lista> {
         return false;
     }
 }
-

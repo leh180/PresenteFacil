@@ -1,46 +1,54 @@
 package controller;
 
-import model.*;
+import model.CRUDLista;
+import model.CRUDUsuario;
+import model.Usuario;
 import view.VisaoUsuario;
 
 /**
- * A classe 'ControleUsuario' é responsável por gerenciar toda a lógica de
- * negócio
- * relacionada aos usuários, como autenticação, cadastro e gerenciamento de
- * perfil.
- * Ela atua como um mediador entre as classes de persistência (CRUD) e a
- * interface
- * com o usuário (VisaoUsuario).
+ * Gerencia toda a lógica de negócio relacionada aos usuários, como autenticação,
+ * cadastro e gerenciamento de perfil. Atua como mediador entre a camada de
+ * persistência de dados (CRUD) e a camada de interface com o usuário (Visao).
+ *
+ * @author Ana, Bruno, João, Leticia e Miguel
+ * @version 1.0
  */
 public class ControleUsuario {
 
-    // ------------------------------------------ Atributos da Classe ------------------------------------------
-
     private CRUDUsuario crudUsuario;
-    private CRUDLista crudLista; // Necessário para verificar se o utilizador tem listas
+    private CRUDLista crudLista;
     private VisaoUsuario visaoUsuario;
 
-    // ------------------------------------------ Construtores ------------------------------------------
-
+    /**
+     * Construtor padrão que inicializa suas próprias instâncias de CRUD.
+     *
+     * @throws Exception se ocorrer um erro na inicialização dos componentes CRUD.
+     */
     public ControleUsuario() throws Exception {
         this.crudUsuario = new CRUDUsuario();
         this.crudLista = new CRUDLista();
         this.visaoUsuario = new VisaoUsuario();
     }
 
+    /**
+     * Construtor que implementa o padrão de Injeção de Dependência.
+     * Recebe instâncias de CRUD já inicializadas por um controlador principal.
+     *
+     * @param crudUsuario Instância de CRUDUsuario para operações com usuários.
+     * @param crudLista Instância de CRUDLista para verificar listas do usuário.
+     */
     public ControleUsuario(CRUDUsuario crudUsuario, CRUDLista crudLista) {
         this.crudUsuario = crudUsuario;
         this.crudLista = crudLista;
         this.visaoUsuario = new VisaoUsuario();
     }
 
-    // ------------------------------------------ Métodos de Autenticação e Cadastro ------------------------------------------
-
     /**
-     * Gerencia o processo de login de um utilizador.
-     * Este método solicita o e-mail e a senha ao usuário, busca o usuário
-     * no sistema e valida as credenciais.
-     * @return O objeto Usuario se o login for bem-sucedido, caso contrário, null.
+     * Gerencia o processo de login de um usuário. Solicita e-mail e senha,
+     * busca o usuário no banco de dados e valida as credenciais.
+     *
+     * @return O objeto {@code Usuario} se o login for bem-sucedido; caso contrário,
+     * retorna {@code null}.
      */
     public Usuario login() {
         String[] dados = visaoUsuario.menuLogin();
@@ -63,9 +71,8 @@ public class ControleUsuario {
     }
 
     /**
-     * Gerencia o processo de criação de um novo utilizador.
-     * Solicita os dados do novo usuário e verifica se o e-mail já está em uso
-     * antes de tentar salvar no sistema.
+     * Orquestra o processo de criação de um novo usuário. Solicita os dados,
+     * verifica se o e-mail já está em uso e, se não estiver, realiza o cadastro.
      */
     public void criarNovoUsuario() {
         try {
@@ -82,13 +89,13 @@ public class ControleUsuario {
         }
     }
 
-    // ------------------------------------------ Métodos de Gerenciamento de Perfil ------------------------------------------
-
     /**
-     * Menu para um utilizador gerenciar os seus próprios dados.
-     * Este método é o ponto de entrada para a gestão do perfil,
-     * oferecendo opções para alterar dados ou excluir a conta.
-     * @param usuarioLogado O utilizador que está com a sessão ativa.
+     * Ponto de entrada e loop principal para o menu de gerenciamento de perfil do
+     * usuário. Oferece opções para alterar dados ou excluir a própria conta.
+     *
+     * @param usuarioLogado O usuário que está com a sessão ativa.
+     * @return {@code true} se a conta do usuário foi excluída durante a execução
+     * deste menu, {@code false} caso contrário.
      */
     public boolean menuMeusDados(Usuario usuarioLogado) {
         String opcao;
@@ -118,8 +125,9 @@ public class ControleUsuario {
     }
 
     /**
-     * Gerencia o processo de alteração dos dados de um usuário.
-     * Pede os novos dados e atualiza o objeto no sistema.
+     * Gerencia o processo de alteração dos dados cadastrais (nome e e-mail) de um
+     * usuário.
+     *
      * @param usuario O objeto do usuário a ser alterado.
      */
     private void alterarMeusDados(Usuario usuario) {
@@ -140,11 +148,12 @@ public class ControleUsuario {
     }
 
     /**
-     * Gerencia o processo de exclusão de uma conta de usuário.
-     * Antes de excluir, verifica se há listas de presentes associadas.
-     * Se não houver, pede uma confirmação final e realiza a exclusão.
+     * Gerencia o processo de exclusão da conta de um usuário. Aplica a regra de
+     * negócio que impede a exclusão se o usuário possuir listas associadas.
+     *
      * @param usuario O objeto do usuário a ser excluído.
-     * @return `true` se a conta foi excluída com sucesso, `false` caso contrário.
+     * @return {@code true} se a conta foi excluída com sucesso, {@code false} caso
+     * contrário.
      */
     private boolean excluirMinhaConta(Usuario usuario) {
         try {
@@ -172,7 +181,9 @@ public class ControleUsuario {
     }
 
     /**
-     * Fecha as ligações com os ficheiros de dados geridos por este controlador.
+     * Fecha as conexões com os arquivos de dados gerenciados por este controlador.
+     *
+     * @throws Exception se ocorrer um erro ao fechar o recurso.
      */
     public void close() throws Exception {
         crudUsuario.close();

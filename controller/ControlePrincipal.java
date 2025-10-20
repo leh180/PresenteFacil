@@ -1,22 +1,22 @@
 package controller;
 
-import java.util.*;
+import java.util.Scanner;
 import model.CRUDLista;
-import model.CRUDUsuario;
+import model.CRUDListaProduto;
 import model.CRUDProduto;
+import model.CRUDUsuario;
 import model.Usuario;
 import view.VisaoUsuario;
 
 /**
- * A classe 'ControlePrincipal' é o ponto de entrada da aplicação.
- * Ela é responsável por orquestrar o fluxo principal do sistema,
- * gerindo o login, a criação de utilizadores e o acesso aos menus
- * de funcionalidades após a autenticação.
+ * Ponto de entrada e orquestrador principal da aplicação. Esta classe gerencia o
+ * ciclo de vida da aplicação, os menus principais (inicial e logado) e a
+ * inicialização e finalização de todos os outros controladores e serviços de
+ * acesso a dados (CRUDs).
+ * @author Ana, Bruno, João, Leticia e Miguel
+ * @version 1.5
  */
 public class ControlePrincipal {
-
-    // ------------------------------------------ Atributos da Classe
-    // ------------------------------------------
 
     private VisaoUsuario visaoUsuario;
     private ControleUsuario controleUsuario;
@@ -24,49 +24,61 @@ public class ControlePrincipal {
     private ControleProduto controleProduto;
     private Usuario usuarioLogado;
     private Scanner teclado;
+    private CRUDListaProduto crudListaProduto;
 
-    // ------------------------------------------ Construtor
-    // ------------------------------------------
-
+    /**
+     * Construtor da classe ControlePrincipal.
+     * Inicializa de forma centralizada todas as camadas da aplicação,
+     * incluindo as classes de acesso a dados (CRUD), os controladores de
+     * sub-módulos e as classes de visão. Este método utiliza injeção de
+     * dependência para fornecer aos controladores as instâncias de CRUD
+     * necessárias.
+     *
+     * @throws Exception se ocorrer um erro na inicialização de qualquer um dos
+     * componentes CRUD (por exemplo, erro ao acessar os
+     * arquivos de banco de dados).
+     */
     public ControlePrincipal() throws Exception {
         this.visaoUsuario = new VisaoUsuario();
-
-        // As instâncias de CRUD são criadas UMA SÓ VEZ aqui
+        
         CRUDUsuario crudUsuario = new CRUDUsuario();
         CRUDLista crudLista = new CRUDLista();
         CRUDProduto crudProduto = new CRUDProduto();
-
-        // E são injetadas nos outros controladores
+        this.crudListaProduto = new CRUDListaProduto(); 
+        
         this.controleUsuario = new ControleUsuario(crudUsuario, crudLista);
-        this.controleLista = new ControleLista(crudLista);
-        this.controleProduto = new ControleProduto(crudProduto);
-
+        this.controleLista = new ControleLista(crudLista, crudProduto, crudListaProduto);
+        this.controleProduto = new ControleProduto(crudProduto, crudLista, crudListaProduto);
+        
         this.usuarioLogado = null;
-        this.teclado = new Scanner(System.in);
+        this.teclado = new Scanner(System.in, "UTF-8");
     }
 
-    // ------------------------------------------ Métodos de Menu
-    // ------------------------------------------
-
     /**
-     * Inicia o loop principal da aplicação para utilizadores não autenticados.
-     * Apresenta o menu inicial e gere as ações de login, cadastro ou saída.
-     * 
-     * @throws Exception se ocorrer um erro de I/O nos ficheiros.
+     * Inicia e gerencia o loop principal da aplicação para usuários não
+     * autenticados. Exibe o menu inicial com opções de login, cadastro ou
+     * saída. Ao final da execução (quando o usuário escolhe sair), este método
+     * é responsável por fechar todas as conexões e recursos abertos, como
+     * arquivos de banco de dados e o Scanner.
+     *
+     * @throws Exception se ocorrer um erro durante o fechamento dos recursos CRUD.
      */
     public void iniciar() throws Exception {
         String opcao;
         do {
             opcao = visaoUsuario.menuInicial();
-            switch (opcao) {
+            switch(opcao) {
                 case "1":
                     usuarioLogado = controleUsuario.login();
-                    if (usuarioLogado != null) {
+                    if(usuarioLogado != null) {
                         menuLogado();
+                    } else {
+                        visaoUsuario.pausa();
                     }
                     break;
                 case "2":
                     controleUsuario.criarNovoUsuario();
+                    visaoUsuario.pausa();
                     break;
                 case "s":
                     visaoUsuario.mostrarMensagem("Até breve!");
@@ -77,23 +89,26 @@ public class ControlePrincipal {
                     break;
             }
         } while (!opcao.equals("s"));
-
+        
         controleUsuario.close();
         controleLista.close();
         controleProduto.close();
+        this.crudListaProduto.close(); 
         teclado.close();
     }
 
     /**
-     * Gere o menu principal para um utilizador que está autenticado.
-     * Este método é chamado após um login bem-sucedido e continua em loop
-     * até que o utilizador faça logout ou apague a sua conta.
-     * 
-     * @throws Exception se ocorrer um erro de I/O nos ficheiros.
+     * Gerencia o menu principal para um usuário que está autenticado. Exibe as
+     * opções disponíveis para o usuário logado, como gerenciamento de dados
+     * pessoais, listas de compras e produtos. O loop continua até que o usuário
+     * faça logout ou exclua sua conta.
+     *
+     * @throws Exception pode ser lançada pelos métodos dos sub-controladores
+     * chamados dentro do menu.
      */
     private void menuLogado() throws Exception {
         String opcao;
-
+        
         do {
             System.out.println("\n-----------------");
             System.out.println("> Início");
@@ -104,7 +119,7 @@ public class ControlePrincipal {
             System.out.println("(4) Procurar lista por código");
             System.out.println("\n(S) Sair (Logout)");
             System.out.print("\nOpção: ");
-
+            
             opcao = teclado.nextLine().toLowerCase();
             boolean contaExcluida = false;
 
@@ -118,7 +133,7 @@ public class ControlePrincipal {
                     controleLista.menuMinhasListas(usuarioLogado);
                     break;
                 case "3":
-                    controleProduto.menuProdutos();
+                    controleProduto.menuProdutos(usuarioLogado);
                     break;
                 case "4":
                     controleLista.menuProcurarLista();
@@ -126,14 +141,13 @@ public class ControlePrincipal {
                 case "s":
                     usuarioLogado = null;
                     visaoUsuario.mostrarMensagem("Logout efetuado.");
-                    visaoUsuario.pausa();
                     break;
                 default:
                     visaoUsuario.mostrarMensagem("Opção inválida!");
                     visaoUsuario.pausa();
                     break;
             }
-            if (contaExcluida) {
+            if(contaExcluida) {
                 usuarioLogado = null;
                 break;
             }

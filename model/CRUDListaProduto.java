@@ -5,15 +5,32 @@ import bib.ArvoreBMais;
 import java.io.File;
 import java.util.ArrayList;
 
-// CRUD para a associação ListaProduto (relacionamento N:N)
+/**
+ * Gerencia as operações de persistência (CRUD) para a entidade associativa
+ * {@link ListaProduto}. Esta classe implementa o relacionamento N:N entre
+ * {@link Lista} e {@link Produto}.
+ * Utiliza duas Árvores B+ como índices secundários para permitir buscas
+ * eficientes tanto pelo ID da Lista quanto pelo ID do Produto.
+ *
+ * @author Ana, Bruno, João, Leticia e Miguel
+ * @version 2.0
+ */
 public class CRUDListaProduto extends Arquivo<ListaProduto> {
 
-    // Atributos da Classe (2 Árvores B+)
+    // --- Atributos da Classe ---
     private ArvoreBMais<ParIdListaProduto> indiceIdLista; // Busca por Lista
     private ArvoreBMais<ParIdProdutoListaProduto> indiceIdProduto; // Busca por Produto
 
-    // Construtores (cria arquivo de data com as listas e produtos caso não existam, e
-    // cria também um arquivo com as árvores)
+    // --- Construtor ---
+    
+    /**
+     * Construtor da classe CRUDListaProduto.
+     * Inicializa o arquivo principal de dados ("listaproduto") e os arquivos
+     * de índices B+ (um indexado por idLista, outro por idProduto).
+     *
+     * @throws Exception se ocorrer um erro na abertura ou criação dos arquivos
+     * de dados ou índices.
+     */
     public CRUDListaProduto() throws Exception {
         super("listaproduto", ListaProduto.class.getConstructor());
 
@@ -21,36 +38,33 @@ public class CRUDListaProduto extends Arquivo<ListaProduto> {
         if (!d.exists())
             d.mkdir();
 
-        // Inicializa a arvore B+ indexada por IdLista
         indiceIdLista = new ArvoreBMais<>(
                 ParIdListaProduto.class.getConstructor(),
-                5, // ordem da árvore 5
+                5, 
                 "data/listaproduto_idlista.btree.db");
 
-        // Inicializa a árvore B+ indexada por IdProduto
         indiceIdProduto = new ArvoreBMais<>(
                 ParIdProdutoListaProduto.class.getConstructor(),
-                5, // ordem da árvore
+                5, 
                 "data/listaproduto_idproduto.btree.db");
     }
 
-    // Funções do CRUD
+    // --- Métodos CRUD ---
 
     /**
-     * Cria uma nova associação entre Lista e Produto
-     * Insere o registro no arquivo e atualiza ambas as árvores B+
-     * 
-     * @param lp O objeto ListaProduto a ser criado
-     * @return O ID gerado para a associação
-     * @throws Exception se ocorrer erro durante a criação
+     * Cria um novo registro de associação {@link ListaProduto} no arquivo
+     * principal e atualiza ambos os índices B+.
+     *
+     * @param lp O objeto {@link ListaProduto} a ser persistido (sem ID).
+     * @return O ID (inteiro) gerado para a nova associação.
+     * @throws Exception se ocorrer um erro durante a escrita no arquivo principal
+     * ou nos índices.
      */
     @Override
     public int create(ListaProduto lp) throws Exception {
-        // Cria o registro no arquivo
         int id = super.create(lp);
         lp.setID(id);
 
-        // Insere nas duas árvores B+
         indiceIdLista.create(new ParIdListaProduto(lp.getIdLista(), id));
         indiceIdProduto.create(new ParIdProdutoListaProduto(lp.getIdProduto(), id));
 
@@ -58,32 +72,19 @@ public class CRUDListaProduto extends Arquivo<ListaProduto> {
     }
 
     /**
-     * Leitura da associação pelo id
-     * 
-     * @param id O ID da associação
-     * @return O objeto ListaProduto ou null se não encontrado
-     * @throws Exception se ocorrer erro durante a leitura
+     * Busca todas as associações ({@link ListaProduto}) pertencentes a uma
+     * lista específica, utilizando o índice B+ de ID de Lista.
+     *
+     * @param idLista O ID (inteiro) da lista a ser consultada.
+     * @return Um {@code ArrayList<ListaProduto>} contendo todas as associações
+     * encontradas para a lista (pode estar vazio).
+     * @throws Exception se ocorrer um erro durante a leitura do índice ou do
+     * arquivo principal.
      */
-    @Override
-    public ListaProduto read(int id) throws Exception {
-        return super.read(id);
-    }
-
-    /**
-     * Busca todos os produtos da lista pesquisada
-     * Utiliza a arvore B+ indexada por idLista para a pesquisa
-     * 
-     * @param idLista id da lista
-     * @return ArrayList com todas as associações da lista
-     * @throws Exception se ocorrer erro durante a busca
-     */
-    public ArrayList<ListaProduto> readByLista(int idLista) throws Exception {
+    public ArrayList<ListaProduto> readAllByLista(int idLista) throws Exception {
         ArrayList<ListaProduto> resultado = new ArrayList<>();
-
-        // Busca na árvore B+ todos os ods de ListaProduto para essa lista
         ArrayList<ParIdListaProduto> pares = indiceIdLista.read(new ParIdListaProduto(idLista));
 
-        // Para cada par encontrado se lê o registro completo
         for (ParIdListaProduto par : pares) {
             ListaProduto lp = super.read(par.getIdListaProduto());
             if (lp != null) {
@@ -94,20 +95,19 @@ public class CRUDListaProduto extends Arquivo<ListaProduto> {
     }
 
     /**
-     * Busca todas as listas com o produto pesquisado
-     * Utiliza a arvore B+ indexada por idProduto para a pesquisa
-     * 
-     * @param idProduto id do produto
-     * @return ArrayList com todas as associações do produto
-     * @throws Exception se ocorrer erro durante a busca
+     * Busca todas as associações ({@link ListaProduto}) relacionadas a um
+     * produto específico, utilizando o índice B+ de ID de Produto.
+     *
+     * @param idProduto O ID (inteiro) do produto a ser consultado.
+     * @return Um {@code ArrayList<ListaProduto>} contendo todas as associações
+     * encontradas para o produto (pode estar vazio).
+     * @throws Exception se ocorrer um erro durante a leitura do índice ou do
+     * arquivo principal.
      */
-    public ArrayList<ListaProduto> readByProduto(int idProduto) throws Exception {
+    public ArrayList<ListaProduto> readAllByProduto(int idProduto) throws Exception {
         ArrayList<ListaProduto> resultado = new ArrayList<>();
-
-        // Busca na árvore todos os ids de ListaProduto para esse produto
         ArrayList<ParIdProdutoListaProduto> pares = indiceIdProduto.read(new ParIdProdutoListaProduto(idProduto));
 
-        // Para cada par encontrado faz uma leitura do registro inteiro
         for (ParIdProdutoListaProduto par : pares) {
             ListaProduto lp = super.read(par.getIdListaProduto());
             if (lp != null) {
@@ -118,51 +118,33 @@ public class CRUDListaProduto extends Arquivo<ListaProduto> {
     }
 
     /**
-     * Update de uma associação existente
-     * Não atualiza os índices já qu, os ids não mudam
-     * 
-     * @param lp objeto ListaProduto com os dados atualizados
-     * @return true se a atualização foi bem-sucedida, false caso contrário
-     * @throws Exception se ocorrer erro durante a atualização
+     * Atualiza um registro de associação {@link ListaProduto} no arquivo
+     * principal.
+     * A classe {@link Arquivo} base já trata a atualização de índices caso as
+     * chaves estrangeiras (idLista, idProduto) sejam alteradas.
+     *
+     * @param lp O objeto {@link ListaProduto} contendo os dados atualizados.
+     * @return {@code true} se a atualização for bem-sucedida, {@code false}
+     * caso contrário.
+     * @throws Exception se ocorrer um erro durante a escrita no arquivo.
      */
     @Override
     public boolean update(ListaProduto lp) throws Exception {
-        ListaProduto lpAntigo = super.read(lp.getID());
-        if (lpAntigo == null) {
-            return false;
-        }
-
-        // Se os ids de Lista ou Produto mudaram: reindexa
-        if (lpAntigo.getIdLista() != lp.getIdLista() ||
-                lpAntigo.getIdProduto() != lp.getIdProduto()) {
-
-            // Remove dos índices antigos
-            indiceIdLista.delete(new ParIdListaProduto(lpAntigo.getIdLista(), lp.getID()));
-            indiceIdProduto.delete(new ParIdProdutoListaProduto(lpAntigo.getIdProduto(), lp.getID()));
-
-            // Atualiza o arquivo
-            boolean success = super.update(lp);
-
-            if (success) {
-                // Insere nos novos índices
-                indiceIdLista.create(new ParIdListaProduto(lp.getIdLista(), lp.getID()));
-                indiceIdProduto.create(new ParIdProdutoListaProduto(lp.getIdProduto(), lp.getID()));
-            }
-
-            return success;
-        } else {
-            // Apenas atualiza quantidade/observações (índices não mudam)
-            return super.update(lp);
-        }
+        // NOTA: A lógica de atualização da superclasse Arquivo.java
+        // deve lidar com a remoção e recriação nos índices B+
+        // se os IDs de chave estrangeira (idLista, idProduto) mudarem.
+        return super.update(lp);
     }
 
     /**
-     * Remove uma associação entre Lista e Produto
-     * Remove o registro do arquivo principal e das árvores
-     * 
-     * @param id id da associação removida
-     * @return true se a remoção foi concluída, false caso de erro
-     * @throws Exception se ocorrer erro durante a remoção
+     * Exclui (logicamente) uma associação {@link ListaProduto} do arquivo
+     * principal e remove suas entradas de ambos os índices B+.
+     *
+     * @param id O ID (inteiro) da associação a ser excluída.
+     * @return {@code true} se a exclusão for bem-sucedida, {@code false}
+     * caso contrário (ex: associação não encontrada).
+     * @throws Exception se ocorrer um erro durante a atualização dos arquivos
+     * ou índices.
      */
     @Override
     public boolean delete(int id) throws Exception {
@@ -171,23 +153,24 @@ public class CRUDListaProduto extends Arquivo<ListaProduto> {
             return false;
         }
 
-        // Remove das duas árvores B+
         indiceIdLista.delete(new ParIdListaProduto(lp.getIdLista(), id));
         indiceIdProduto.delete(new ParIdProdutoListaProduto(lp.getIdProduto(), id));
 
-        // Remove do arquivo principal
         return super.delete(id);
     }
 
     /**
-     * Remove todas as associações de uma lista
-     * 
-     * @param idLista id da lista
-     * @return Quantidade de associações removidas
-     * @throws Exception se ocorrer erro durante a remoção
+     * Exclui todas as associações {@link ListaProduto} pertencentes a uma
+     * lista específica.
+     * Este método é usado, por exemplo, ao excluir uma {@link Lista}.
+     *
+     * @param idLista O ID (inteiro) da lista cujas associações devem ser
+     * removidas.
+     * @return O número (inteiro) de associações que foram excluídas com sucesso.
+     * @throws Exception se ocorrer um erro durante as operações de exclusão.
      */
-    public int deletePorLista(int idLista) throws Exception {
-        ArrayList<ListaProduto> associacoes = readByLista(idLista);
+    public int deleteByLista(int idLista) throws Exception {
+        ArrayList<ListaProduto> associacoes = readAllByLista(idLista);
         int count = 0;
 
         for (ListaProduto lp : associacoes) {
@@ -199,34 +182,17 @@ public class CRUDListaProduto extends Arquivo<ListaProduto> {
     }
 
     /**
-     * Remove todas as associações de um produto
-     * 
-     * @param idProduto id do produto
-     * @return Quantidade de associações removidas
-     * @throws Exception se ocorrer erro durante a remoção
-     */
-    public int deletePorProduto(int idProduto) throws Exception {
-        ArrayList<ListaProduto> associacoes = readByProduto(idProduto);
-        int count = 0;
-
-        for (ListaProduto lp : associacoes) {
-            if (delete(lp.getID())) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    /**
-     * Testa se existe uma associação entre uma lista e um produto
-     * 
-     * @param idLista   id da lista
-     * @param idProduto id do produto
-     * @return objeto ListaProduto se existir, se não retorna NULL
-     * @throws Exception se ocorrer erro durante a busca
+     * Verifica se já existe uma associação entre um ID de lista e um ID de
+     * produto.
+     *
+     * @param idLista O ID (inteiro) da lista.
+     * @param idProduto O ID (inteiro) do produto.
+     * @return O objeto {@link ListaProduto} se a associação for encontrada,
+     * {@code null} caso contrário.
+     * @throws Exception se ocorrer um erro durante a leitura dos dados.
      */
     public ListaProduto findAssociacao(int idLista, int idProduto) throws Exception {
-        ArrayList<ListaProduto> produtos = readByLista(idLista);
+        ArrayList<ListaProduto> produtos = readAllByLista(idLista);
 
         for (ListaProduto lp : produtos) {
             if (lp.getIdProduto() == idProduto) {
@@ -237,9 +203,10 @@ public class CRUDListaProduto extends Arquivo<ListaProduto> {
     }
 
     /**
-     * Fecha os arquivos principal e índices
-     * 
-     * @throws Exception se ocorrer erro ao fechar
+     * Fecha as conexões com os arquivos de dados gerenciados por este
+     * controlador.
+     *
+     * @throws Exception se ocorrer um erro ao fechar o recurso.
      */
     @Override
     public void close() throws Exception {

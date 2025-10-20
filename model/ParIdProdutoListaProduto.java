@@ -1,65 +1,138 @@
 package model;
 
 import bib.RegistroArvoreBMais;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
- * Par (idProduto, idListaProduto) para indexação na Árvore B+
- * Busca todas as listas que contêm um determinado produto
- * Ordena primeiro por idProduto e depois por idListaProduto
+ * Representa um par (Chave, Valor) para ser usado no índice de Árvore B+.
+ * Esta classe específica associa um {@code int} (idProduto) ao ID (inteiro)
+ * do registro principal da {@link ListaProduto}.
+ * É usado para buscar eficientemente todas as listas que contêm um produto.
+ *
+ * Implementa {@link RegistroArvoreBMais} para serialização e comparação.
+ *
+ * @author Ana, Bruno, João, Leticia e Miguel
+ * @version 2.0
  */
 public class ParIdProdutoListaProduto implements RegistroArvoreBMais<ParIdProdutoListaProduto> {
 
-    private int idProduto;
-    private int idListaProduto;
-    private final short TAMANHO = 8; // Mesma idéia do ParIdListaProduto
+    private int idProduto; // Chave de busca (ID do Produto)
+    private int idListaProduto; // Valor (ID do registro ListaProduto)
+    
+    /**
+     * Tamanho fixo do registro em bytes.
+     * (4 bytes para idProduto) + (4 bytes para idListaProduto).
+     * Total: 8 bytes.
+     */
+    private final short TAMANHO = 8;
 
-    // Construtores
+    // --- Construtores ---
+
+    /**
+     * Construtor padrão.
+     * Inicializa ambos os IDs como -1.
+     */
     public ParIdProdutoListaProduto() {
         this(-1, -1);
     }
 
+    /**
+     * Construtor de busca.
+     * Usado para criar um objeto de busca para a Árvore B+, onde apenas
+     * a chave (idProduto) é relevante.
+     *
+     * @param idProduto O ID do produto (chave) a ser buscado.
+     */
     public ParIdProdutoListaProduto(int idProduto) {
         this(idProduto, -1);
     }
 
+    /**
+     * Construtor completo.
+     *
+     * @param idProduto O ID do produto (chave).
+     * @param idListaProduto O ID do registro de associação (valor).
+     */
     public ParIdProdutoListaProduto(int idProduto, int idListaProduto) {
         this.idProduto = idProduto;
         this.idListaProduto = idListaProduto;
     }
 
-    // Getters e setters
+    // --- Getters e setters ---
+
+    /**
+     * Obtém o ID do produto (chave).
+     *
+     * @return O ID (inteiro) do produto.
+     */
     public int getIdProduto() {
         return idProduto;
     }
 
+    /**
+     * Define o ID do produto (chave).
+     *
+     * @param idProduto O novo ID (inteiro) do produto.
+     */
     public void setIdProduto(int idProduto) {
         this.idProduto = idProduto;
     }
 
+    /**
+     * Obtém o ID do registro ListaProduto (valor).
+     *
+     * @return O ID (inteiro) do registro ListaProduto.
+     */
     public int getIdListaProduto() {
         return idListaProduto;
     }
 
+    /**
+     * Define o ID do registro ListaProduto (valor).
+     *
+     * @param idListaProduto O novo ID (inteiro) do registro ListaProduto.
+     */
     public void setIdListaProduto(int idListaProduto) {
         this.idListaProduto = idListaProduto;
     }
 
-    // Outros métodos (interface pro RegistroArvoreBMais)
+    // --- Métodos da Interface RegistroArvoreBMais ---
 
+    /**
+     * Cria uma cópia profunda (clone) deste objeto.
+     *
+     * @return Um novo objeto {@code ParIdProdutoListaProduto} com os mesmos
+     * valores.
+     */
     @Override
-    public ParIdProdutoListaProduto clone() { // UM clone (permite atribuições independentes)
+    public ParIdProdutoListaProduto clone() {
         return new ParIdProdutoListaProduto(this.idProduto, this.idListaProduto);
     }
 
+    /**
+     * Retorna o tamanho fixo deste registro em bytes.
+     *
+     * @return O tamanho (short) do registro (8 bytes).
+     */
     @Override
     public short size() {
         return this.TAMANHO;
     }
 
     /**
-     * Compara este par com outro
-     * Ordena primeiro por idProduto e depois por idListaProduto
+     * Compara este objeto com outro {@code ParIdProdutoListaProduto}.
+     * A ordenação é feita primeiro pelo {@code idProduto} (chave principal)
+     * e, em caso de empate, pelo {@code idListaProduto} (usado como
+     * critério de desempate).
+     *
+     * @param outro O outro objeto {@code ParIdProdutoListaProduto} a ser
+     * comparado.
+     * @return Um valor negativo se este objeto for menor, zero se for igual,
+     * ou um valor positivo se for maior que o outro.
      */
     @Override
     public int compareTo(ParIdProdutoListaProduto outro) {
@@ -70,6 +143,13 @@ public class ParIdProdutoListaProduto implements RegistroArvoreBMais<ParIdProdut
         }
     }
 
+    /**
+     * Serializa o objeto (idProduto e idListaProduto) para um array de bytes
+     * de tamanho fixo.
+     *
+     * @return O array de bytes ({@code byte[]}) representando o objeto.
+     * @throws IOException se ocorrer um erro durante a escrita nos streams.
+     */
     @Override
     public byte[] toByteArray() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -79,6 +159,13 @@ public class ParIdProdutoListaProduto implements RegistroArvoreBMais<ParIdProdut
         return baos.toByteArray();
     }
 
+    /**
+     * Desserializa um array de bytes, preenchendo os atributos deste objeto
+     * (idProduto e idListaProduto).
+     *
+     * @param vb O array de bytes ({@code byte[]}) lido do arquivo.
+     * @throws IOException se ocorrer um erro during a leitura dos streams.
+     */
     @Override
     public void fromByteArray(byte[] vb) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(vb);
@@ -87,6 +174,11 @@ public class ParIdProdutoListaProduto implements RegistroArvoreBMais<ParIdProdut
         this.idListaProduto = dis.readInt();
     }
 
+    /**
+     * Gera uma representação em String do par, útil para depuração.
+     *
+     * @return Uma String formatada com o idProduto e o idListaProduto.
+     */
     @Override
     public String toString() {
         return "(" + idProduto + ", " + idListaProduto + ")";
