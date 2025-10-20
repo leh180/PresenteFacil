@@ -157,4 +157,16 @@ public class VisaoProduto {
         System.out.print("\nTem a certeza que deseja " + acao + " o produto \"" + nomeProduto + "\"? (S/N): ");
         return teclado.nextLine().equalsIgnoreCase("s");
     }
+
+    /**
+     * Solicita uma confirmação de alto risco, avisando sobre a remoção em cascata.
+     * @param nomeProduto O nome do produto.
+     * @param numListas O número de listas das quais o produto será removido.
+     * @return true se o utilizador confirmar (S/s), false caso contrário.
+     */
+    public boolean confirmarInativacaoEmUso(String nomeProduto, int numListas) {
+        System.out.println("\nATENÇÃO: O produto \"" + nomeProduto + "\" está atualmente em " + numListas + " lista(s).");
+        System.out.print("Inativá-lo irá removê-lo de TODAS estas listas. Deseja continuar? (S/N): ");
+        return teclado.nextLine().equalsIgnoreCase("s");
+    }
 }

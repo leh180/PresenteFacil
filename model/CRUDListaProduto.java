@@ -182,10 +182,29 @@ public class CRUDListaProduto extends Arquivo<ListaProduto> {
      * @throws Exception se ocorrer um erro durante a exclusão.
      */
     public int deleteByLista(int idLista) throws Exception {
-        ArrayList<ListaProduto> associacoesParaApagar = readAllByLista(idLista);
+        ArrayList<ListaProduto> associacoes = readAllByLista(idLista);
         int count = 0;
+        for (ListaProduto lp : associacoes) {
+            if (delete(lp.getID())) {
+                count++;
+            }
+        }
+        return count;
+    }
 
-        for (ListaProduto lp : associacoesParaApagar) {
+    /**
+     * Apaga todas as associações (ListaProduto) pertencentes a um produto
+     * específico.
+     * Método essencial para a "exclusão em cascata" ao apagar um Produto.
+     *  
+     * @param idProduto O ID do produto cujas associações devem ser apagadas.
+     * @return O número de associações que foram apagadas.
+     * @throws Exception se ocorrer um erro durante a exclusão.
+     */
+    public int deleteByProduto(int idProduto) throws Exception {
+        ArrayList<ListaProduto> associacoes = readAllByProduto(idProduto);
+        int count = 0;
+        for (ListaProduto lp : associacoes) {
             if (delete(lp.getID())) {
                 count++;
             }

@@ -252,8 +252,9 @@ public class ControleProduto {
     }
 
     /**
-     * Aplica a regra de negócio para inativar um produto. Um produto só pode
-     * ser inativado se não estiver associado a nenhuma lista.
+     * Aplica a regra de negócio para inativar um produto. Um produto pode ser
+     * inativado estando ou não associado a alguma lista, vai depender da confirmação
+     * do usuário.
      *
      * @param produto O produto a ser inativado.
      * @param totalAssociacoes O número de listas às quais o produto está
@@ -262,21 +263,34 @@ public class ControleProduto {
      * lógica no CRUD.
      */
     private void inativarProduto(Produto produto, int totalAssociacoes) {
-        if (totalAssociacoes > 0) {
-            visaoUsuario.mostrarMensagem("\nERRO: Não é possível inativar um produto que está associado a " + totalAssociacoes + " lista(s).");
-            visaoUsuario.pausa();
-            return;
-        }
-        if (visaoProduto.confirmarAcao("inativar", produto.getNome())) {
-            try {
-                if (crudProduto.delete(produto.getID())) {
-                    visaoUsuario.mostrarMensagem("\nProduto inativado com sucesso!");
-                } else {
-                    visaoUsuario.mostrarMensagem("\nFalha ao inativar o produto.");
+        try {
+            // Se o produto NÃO está em uso, apenas pede a confirmação simples.
+            if (totalAssociacoes == 0) {
+                if (visaoProduto.confirmarAcao("inativar", produto.getNome())) {
+                    if (crudProduto.delete(produto.getID())) {
+                        visaoUsuario.mostrarMensagem("\nProduto inativado com sucesso!");
+                    } else {
+                        visaoUsuario.mostrarMensagem("\nFalha ao inativar o produto.");
+                    }
                 }
-            } catch (Exception e) {
-                visaoUsuario.mostrarMensagem("\nERRO ao inativar produto: " + e.getMessage());
+            } 
+            // Se o produto ESTÁ EM USO, pede confirmação de alto risco.
+            else {
+                if (visaoProduto.confirmarInativacaoEmUso(produto.getNome(), totalAssociacoes)) {
+                    crudListaProduto.delete(produto.getID());
+                    
+                    if (crudProduto.delete(produto.getID())) {
+                        visaoUsuario.mostrarMensagem("\nProduto inativado e removido de " + totalAssociacoes + " lista(s) com sucesso!");
+                    } else {
+                        visaoUsuario.mostrarMensagem("\nFalha ao inativar o produto após remover das listas.");
+                    }
+                } else {
+                    visaoUsuario.mostrarMensagem("\nOperação cancelada.");
+                }
             }
+        } catch (Exception e) {
+            visaoUsuario.mostrarMensagem("\nERRO ao inativar produto: " + e.getMessage());
+            e.printStackTrace();
         }
         visaoUsuario.pausa();
     }

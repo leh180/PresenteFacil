@@ -85,6 +85,9 @@ public class VisaoLista {
     public String mostrarDetalhesLista(Lista lista, String nomeProprietario, boolean mostrarMenuGestao) {
         System.out.println("\n-----------------");
         System.out.println("> Início > Minhas Listas > " + lista.getNome());
+
+        System.out.println("\nProprietário: " + nomeProprietario);
+
         System.out.println("\nCÓDIGO: " + lista.getCodigoCompartilhavel());
         System.out.println("NOME: " + lista.getNome());
         System.out.println("DESCRIÇÃO: " + lista.getDescricao());

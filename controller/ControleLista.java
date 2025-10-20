@@ -165,7 +165,6 @@ public class ControleLista {
                 List<Pair<Produto, ListaProduto>> produtosParaExibir = new ArrayList<>();
                 for(ListaProduto lp : associacoes) {
                     Produto p = crudProduto.read(lp.getIdProduto());
-                    
                     if (p != null && p.isAtivo()) {
                         produtosParaExibir.add(new Pair<>(p, lp));
                     }
@@ -222,7 +221,7 @@ public class ControleLista {
                         visaoUsuario.mostrarMensagem("ERRO: Este produto está inativo e não pode ser adicionado.");
                     }
                 } else {
-                    visaoUsuario.mostrarMensagem("Nenhum produto encontrado com o GTIN informado.");
+                    visaoUsuario.mostrarMensagem("Nenhum produto encontrado com o GTIN informado (pode estar inativo ou não existir).");
                 }
             } catch(Exception e) {
                 visaoUsuario.mostrarMensagem("ERRO ao adicionar produto: " + e.getMessage());
@@ -259,11 +258,11 @@ public class ControleLista {
                         crudListaProduto.update(listaProduto);
                         visaoUsuario.mostrarMensagem("Observações alteradas com sucesso!");
                         break;
-                    case "3": // Remover produto da lista
+                    case "3": // Remover da lista
                         if(visaoLista.confirmarRemocaoProduto(produto.getNome())) {
                             crudListaProduto.delete(listaProduto.getID());
                             visaoUsuario.mostrarMensagem("Produto removido da lista!");
-                            return;
+                            return; // Retorna para o menu anterior
                         }
                         break;
                     case "r":

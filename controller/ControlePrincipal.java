@@ -18,12 +18,14 @@ import view.VisaoUsuario;
  */
 public class ControlePrincipal {
 
+    // --- Atributos ---
     private VisaoUsuario visaoUsuario;
     private ControleUsuario controleUsuario;
     private ControleLista controleLista;
     private ControleProduto controleProduto;
     private Usuario usuarioLogado;
-    private Scanner teclado;
+    
+    // --- Instâncias de CRUD (Centralizadas) ---
     private CRUDUsuario crudUsuario;
     private CRUDLista crudLista;
     private CRUDProduto crudProduto;
@@ -53,7 +55,6 @@ public class ControlePrincipal {
         this.controleProduto = new ControleProduto(crudProduto, crudLista, crudListaProduto);
         
         this.usuarioLogado = null;
-        this.teclado = new Scanner(System.in, "UTF-8");
     }
 
     /**
@@ -156,7 +157,4 @@ public class ControlePrincipal {
 
         } while (usuarioLogado != null && !opcao.equals("s"));
     }
-
-    // não pode fechar o scanner aqui para evitar fechar o System.in
-    // ignorar o warning!
 }
