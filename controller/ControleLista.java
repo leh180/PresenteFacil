@@ -104,26 +104,42 @@ public class ControleLista {
     private void menuDetalhesLista(Lista lista, Usuario usuarioLogado) {
         String opcao;
         do {
-            opcao = visaoLista.mostrarDetalhesLista(lista, usuarioLogado.getNome(), true).trim().toLowerCase();
-            
-            switch (opcao) {
-                case "1":
-                    menuGerenciarProdutosDaLista(lista);
-                    break;
-                case "2":
-                    alterarLista(lista);
-                    break;
-                case "3":
-                    if (excluirLista(lista)) {
-                        return;
+            try {
+                // --- LÓGICA DE BUSCA DE PRODUTOS ADICIONADA AQUI ---
+                List<ListaProduto> associacoes = crudListaProduto.readAllByLista(lista.getID());
+                List<Pair<Produto, ListaProduto>> produtosParaExibir = new ArrayList<>();
+                for(ListaProduto lp : associacoes) {
+                    Produto p = crudProduto.read(lp.getIdProduto());
+                    if (p != null && p.isAtivo()) { // Só exibe produtos ativos
+                        produtosParaExibir.add(new Pair<>(p, lp));
                     }
-                    break;
-                case "r":
-                    break;
-                default:
-                    visaoUsuario.mostrarMensagem("\nOpção inválida!");
-                    visaoUsuario.pausa();
-                    break;
+                }
+
+                // Passa a lista de produtos para a visão
+                opcao = visaoLista.mostrarDetalhesLista(lista, usuarioLogado.getNome(), produtosParaExibir, true).trim().toLowerCase();
+            
+                switch (opcao) {
+                    case "1":
+                        menuGerenciarProdutosDaLista(lista);
+                        break;
+                    case "2":
+                        alterarLista(lista);
+                        break;
+                    case "3":
+                        if (excluirLista(lista)) {
+                            return;
+                        }
+                        break;
+                    case "r":
+                        break;
+                    default:
+                        visaoUsuario.mostrarMensagem("\nOpção inválida!");
+                        visaoUsuario.pausa();
+                        break;
+                }
+            } catch (Exception e) {
+                visaoUsuario.mostrarMensagem("ERRO ao exibir detalhes da lista: " + e.getMessage());
+                opcao = "r"; // Força a saída em caso de erro
             }
         } while (!opcao.equals("r"));
     }
@@ -140,7 +156,18 @@ public class ControleLista {
                 Usuario proprietario = crudUsuario.read(lista.getIdUsuario());
                 String nomeProprietario = (proprietario != null) ? proprietario.getNome() : "Desconhecido";
                 
-                visaoLista.mostrarDetalhesLista(lista, nomeProprietario, false);
+                // --- LÓGICA DE BUSCA DE PRODUTOS ADICIONADA AQUI ---
+                List<ListaProduto> associacoes = crudListaProduto.readAllByLista(lista.getID());
+                List<Pair<Produto, ListaProduto>> produtosParaExibir = new ArrayList<>();
+                for(ListaProduto lp : associacoes) {
+                    Produto p = crudProduto.read(lp.getIdProduto());
+                    if (p != null && p.isAtivo()) {
+                        produtosParaExibir.add(new Pair<>(p, lp));
+                    }
+                }
+                
+                // Passa a lista de produtos para a visão
+                visaoLista.mostrarDetalhesLista(lista, nomeProprietario, produtosParaExibir, false);
             } else {
                 visaoUsuario.mostrarMensagem("\nNenhuma lista encontrada com o código \"" + codigo + "\".");
             }

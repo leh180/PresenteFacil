@@ -82,18 +82,27 @@ public class VisaoLista {
      * @return A {@code String} com a opção do utilizador (se o menu for
      * exibido), ou uma string vazia caso contrário.
      */
-    public String mostrarDetalhesLista(Lista lista, String nomeProprietario, boolean mostrarMenuGestao) {
+    public String mostrarDetalhesLista(Lista lista, String nomeProprietario, List<Pair<Produto, ListaProduto>> produtosDaLista, boolean mostrarMenuGestao) {
         System.out.println("\n-----------------");
         System.out.println("> Início > Minhas Listas > " + lista.getNome());
-
+        
         System.out.println("\nProprietário: " + nomeProprietario);
-
+        
         System.out.println("\nCÓDIGO: " + lista.getCodigoCompartilhavel());
         System.out.println("NOME: " + lista.getNome());
         System.out.println("DESCRIÇÃO: " + lista.getDescricao());
         System.out.println("DATA DE CRIAÇÃO: " + dtf.format(lista.getDataCriacao()));
         String dataLimiteStr = lista.getDataLimite() != null ? dtf.format(lista.getDataLimite()) : "Não definida";
         System.out.println("DATA LIMITE: " + dataLimiteStr);
+
+        System.out.println("\nPRODUTOS NA LISTA:");
+        if (produtosDaLista.isEmpty()) {
+            System.out.println("- Nenhum produto adicionado ainda.");
+        } else {
+            for (Pair<Produto, ListaProduto> par : produtosDaLista) {
+                System.out.println("- " + par.first.getNome() + " (x" + par.second.getQuantidade() + ")");
+            }
+        }
 
         if (mostrarMenuGestao) {
             System.out.println("\n(1) Gerir produtos da lista");
