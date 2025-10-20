@@ -61,8 +61,7 @@ public class VisaoProduto {
         } else {
             for (int i = 0; i < produtos.size(); i++) {
                 Produto p = produtos.get(i);
-                String situacao = p.isAtivo() ? "" : " (INATIVADO)";
-                System.out.println("(" + (i + 1) + ") " + p.getNome() + situacao);
+                System.out.println("(" + (i + 1) + ") " + p.getNome());
             }
         }
         System.out.println();

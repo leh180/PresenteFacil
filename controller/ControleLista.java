@@ -6,6 +6,7 @@ import java.util.List;
 import model.CRUDLista;
 import model.CRUDListaProduto;
 import model.CRUDProduto;
+import model.CRUDUsuario;
 import model.Lista;
 import model.ListaProduto;
 import model.Produto;
@@ -27,6 +28,7 @@ public class ControleLista {
     private CRUDLista crudLista;
     private CRUDProduto crudProduto;
     private CRUDListaProduto crudListaProduto;
+    private CRUDUsuario crudUsuario; // ATRIBUTO ADICIONADO
     private VisaoLista visaoLista;
     private VisaoUsuario visaoUsuario;
 
@@ -38,11 +40,13 @@ public class ControleLista {
      * @param crudL Instância de CRUDLista para operações com listas.
      * @param crudP Instância de CRUDProduto para operações com produtos.
      * @param crudLP Instância de CRUDListaProduto para operações com a tabela associativa.
+     * @param crudU Instância de CRUDUsuario para operações com usuários.
      */
-    public ControleLista(CRUDLista crudL, CRUDProduto crudP, CRUDListaProduto crudLP) {
+    public ControleLista(CRUDLista crudL, CRUDProduto crudP, CRUDListaProduto crudLP, CRUDUsuario crudU) {
         this.crudLista = crudL;
         this.crudProduto = crudP;
         this.crudListaProduto = crudLP;
+        this.crudUsuario = crudU;
         this.visaoLista = new VisaoLista();
         this.visaoUsuario = new VisaoUsuario();
     }
@@ -139,8 +143,10 @@ public class ControleLista {
         try {
             Lista lista = crudLista.readByCodigo(codigo);
             if (lista != null) {
-                // Mostra os detalhes da lista como "Pública" e sem opções de gerenciamento
-                visaoLista.mostrarDetalhesLista(lista, "Pública", false);
+                Usuario proprietario = crudUsuario.read(lista.getIdUsuario());
+                String nomeProprietario = (proprietario != null) ? proprietario.getNome() : "Desconhecido";
+                
+                visaoLista.mostrarDetalhesLista(lista, nomeProprietario, false);
             } else {
                 visaoUsuario.mostrarMensagem("\nNenhuma lista encontrada com o código \"" + codigo + "\".");
             }
@@ -161,15 +167,12 @@ public class ControleLista {
         String opcao;
         do {
             try {
-                // Busca todas as associações (ListaProduto) para o ID da lista
                 List<ListaProduto> associacoes = crudListaProduto.readAllByLista(lista.getID());
                 List<Pair<Produto, ListaProduto>> produtosParaExibir = new ArrayList<>();
-                
-                // Para cada associação, busca o produto correspondente
                 for(ListaProduto lp : associacoes) {
                     Produto p = crudProduto.read(lp.getIdProduto());
-                    if (p != null) {
-                        // Cria um par contendo o Produto e sua associação (quantidade, observações)
+                    
+                    if (p != null && p.isAtivo()) {
                         produtosParaExibir.add(new Pair<>(p, lp));
                     }
                 }
@@ -182,7 +185,6 @@ public class ControleLista {
                     try {
                         int indice = Integer.parseInt(opcao) - 1;
                         if(indice >= 0 && indice < produtosParaExibir.size()) {
-                            // Abre o menu de detalhes para o produto selecionado na lista
                             Pair<Produto, ListaProduto> par = produtosParaExibir.get(indice);
                             menuDetalhesProdutoNaLista(par.first, par.second);
                         } else {

@@ -42,14 +42,15 @@ public class ControlePrincipal {
      * arquivos de banco de dados).
      */
     public ControlePrincipal() throws Exception {
-        this.crudUsuario = new CRUDUsuario();
-        this.crudLista = new CRUDLista();
-        this.crudProduto = new CRUDProduto();
-        this.crudListaProduto = new CRUDListaProduto();
-        
         this.visaoUsuario = new VisaoUsuario();
+        
+        CRUDUsuario crudUsuario = new CRUDUsuario();
+        CRUDLista crudLista = new CRUDLista();
+        CRUDProduto crudProduto = new CRUDProduto();
+        CRUDListaProduto crudListaProduto = new CRUDListaProduto();
+        
         this.controleUsuario = new ControleUsuario(crudUsuario, crudLista);
-        this.controleLista = new ControleLista(crudLista, crudProduto, crudListaProduto);
+        this.controleLista = new ControleLista(crudLista, crudProduto, crudListaProduto, crudUsuario); 
         this.controleProduto = new ControleProduto(crudProduto, crudLista, crudListaProduto);
         
         this.usuarioLogado = null;
@@ -137,8 +138,7 @@ public class ControlePrincipal {
                     controleLista.menuMinhasListas(usuarioLogado);
                     break;
                 case "3":
-                    // O nome do método no seu ControleProduto é 'menuProdutos'
-                    controleProduto.menuProdutos(usuarioLogado);
+                    controleProduto.menuPrincipal(usuarioLogado);
                     break;
                 case "4":
                     controleLista.menuProcurarLista();

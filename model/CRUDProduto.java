@@ -2,178 +2,138 @@ package model;
 
 import bib.Arquivo;
 import bib.HashExtensivel;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Gerencia todas as operações de persistência (CRUD) para a entidade {@link Produto}.
- * Estende a classe genérica {@link Arquivo} e mantém um índice secundário
- * (Hash Extensível) baseado no GTIN do produto para otimizar as buscas.
+ * A classe CRUDProduto estende a classe genérica Arquivo e gere todas as
+ * operações de persistência para a entidade Produto.
+ * Ela mantém um índice secundário por GTIN (Hash Extensível) para
+ * acelerar as buscas. O índice contém TODOS os produtos (ativos e inativos)
+ * para garantir a unicidade do GTIN.
  *
  * @author Ana, Bruno, João, Leticia e Miguel
- * @version 2.0
+ * @version 2.2
  */
 public class CRUDProduto extends Arquivo<Produto> {
 
-    /**
-     * Índice secundário para busca rápida de produtos pelo GTIN.
-     */
     private HashExtensivel<ParGtinId> indiceGtin;
 
-    /**
-     * Construtor da classe CRUDProduto.
-     * Inicializa o arquivo principal de dados ("produtos") e o arquivo de
-     * índice de GTIN (Hash Extensível).
-     *
-     * @throws Exception se ocorrer um erro na abertura ou criação dos arquivos
-     * de dados ou índice.
-     */
     public CRUDProduto() throws Exception {
         super("produtos", Produto.class.getConstructor());
-
-        File d = new File("data");
-        if (!d.exists())
-            d.mkdir();
 
         indiceGtin = new HashExtensivel<>(
                 ParGtinId.class.getConstructor(),
                 4,
-                "data/produtos_gtin.diretorio.idx",
+                "data/produtos_gtin.diretorio.idx", // Verifique nomes dos ficheiros
                 "data/produtos_gtin.cestos.idx");
     }
 
     /**
-     * Cria um novo registro de produto no arquivo principal e atualiza o índice de GTIN.
-     * O produto é sempre criado com o status 'ativo'.
-     *
-     * @param produto O objeto {@link Produto} a ser persistido (sem ID).
-     * @return O ID (inteiro) gerado para o novo produto.
-     * @throws Exception se ocorrer um erro durante a escrita no arquivo principal
-     * ou no índice.
+     * Cria um novo produto, garantindo a unicidade do GTIN antes da criação.
+     * Adiciona o produto ao ficheiro principal e ao índice de GTIN.
+     * @param produto O objeto Produto a ser criado.
+     * @return O ID gerado para o novo produto.
+     * @throws Exception se o GTIN já existir ou ocorrer um erro de ficheiro.
      */
     @Override
     public int create(Produto produto) throws Exception {
-        produto.setAtivo(true); 
+        // REGRA DE NEGÓCIO: Verifica a duplicidade de GTIN ANTES de criar.
+        if (readByGtin(produto.getGtin()) != null) {
+             throw new Exception("O GTIN informado já está cadastrado (pode estar inativo).");
+        }
+        
+        produto.setAtivo(true); // Garante que seja criado como ativo
         int id = super.create(produto);
         produto.setID(id);
 
-        if (produto.isAtivo()) {
-           indiceGtin.create(new ParGtinId(produto.getGtin(), id));
-        }
+        // A entrada no índice é sempre criada, pois o índice guarda ativos e inativos.
+        indiceGtin.create(new ParGtinId(produto.getGtin(), id));
         return id;
     }
 
     /**
-     * Busca um produto específico usando seu código GTIN.
-     * A busca é otimizada pelo índice de Hash e inclui uma verificação
-     * anti-colisão (comparando a String GTIN original).
-     *
-     * @param gtin O código GTIN (String) a ser procurado.
-     * @return O objeto {@link Produto} correspondente, ou {@code null} se não for
-     * encontrado ou se houver colisão de hash.
-     * @throws Exception se ocorrer um erro during a leitura do índice ou do
-     * arquivo principal.
+     * Procura um produto pelo seu GTIN, utilizando o índice secundário.
+     * Encontra o produto independentemente do seu estado (ativo/inativo).
+     * @param gtin O GTIN (String) a ser procurado.
+     * @return O objeto Produto se encontrado, caso contrário, null.
+     * @throws Exception se ocorrer um erro durante a leitura.
      */
     public Produto readByGtin(String gtin) throws Exception {
         int gtinHash = gtin.hashCode();
         ParGtinId par = indiceGtin.read(gtinHash);
 
+        // Verificação anti-colisão de hash
         if (par != null && par.getGtin().equals(gtin)) {
+            // Lê o produto do ficheiro principal usando o ID encontrado no índice.
             return super.read(par.getID());
         }
-        return null;
+        return null; // GTIN não encontrado no índice.
     }
 
     /**
-     * Atualiza os dados de um produto no arquivo principal e garante a
-     * consistência do índice de GTIN.
-     * Se o GTIN for alterado, o índice antigo é removido e o novo é criado.
-     * Se o produto for inativado, seu índice é removido.
-     *
-     * @param novoProduto O objeto {@link Produto} contendo os dados atualizados.
-     * @return {@code true} se a atualização for bem-sucedida, {@code false}
-     * caso contrário.
-     * @throws Exception se ocorrer um erro during a atualização dos arquivos
-     * ou índices.
+     * Atualiza os dados de um produto. Se o GTIN for alterado, o índice é atualizado.
+     * O estado 'ativo' é atualizado no ficheiro principal, mas não afeta o índice.
+     * @param novoProduto O objeto Produto com os dados atualizados.
+     * @return true se a atualização for bem-sucedida, false caso contrário.
+     * @throws Exception se ocorrer um erro durante a escrita.
      */
     @Override
     public boolean update(Produto novoProduto) throws Exception {
         Produto produtoAntigo = super.read(novoProduto.getID());
-        if (produtoAntigo == null) {
-            return false;
-        }
+        if (produtoAntigo == null) return false;
 
-        // Realiza a atualização no ficheiro principal primeiro
+        // Tenta atualizar o ficheiro principal
         if (super.update(novoProduto)) {
-            String gtinAntigo = produtoAntigo.getGtin();
-            String gtinNovo = novoProduto.getGtin();
-            boolean eraAtivo = produtoAntigo.isAtivo();
-            boolean ehAtivo = novoProduto.isAtivo();
-
-            // CASO 1: GTIN mudou
-            if (!gtinAntigo.equals(gtinNovo)) {
-                // Remove o índice antigo (se existia)
-                indiceGtin.delete(gtinAntigo.hashCode());
-                // Adiciona o novo índice (apenas se o produto estiver ativo)
-                if (ehAtivo) {
-                    indiceGtin.create(new ParGtinId(gtinNovo, novoProduto.getID()));
-                }
+            // O índice só precisa de ser atualizado se o próprio GTIN (a chave) for alterado.
+            if (!produtoAntigo.getGtin().equals(novoProduto.getGtin())) {
+                indiceGtin.delete(produtoAntigo.getGtin().hashCode());
+                indiceGtin.create(new ParGtinId(novoProduto.getGtin(), novoProduto.getID()));
             }
-            // CASO 2: GTIN não mudou, mas o estado de ativação sim
-            else {
-                // Se foi REATIVADO, adiciona de volta ao índice
-                if (!eraAtivo && ehAtivo) {
-                    indiceGtin.create(new ParGtinId(gtinNovo, novoProduto.getID()));
-                }
-                // Se foi INATIVADO, remove do índice
-                else if (eraAtivo && !ehAtivo) {
-                    indiceGtin.delete(gtinNovo.hashCode()); // Usa o gtinNovo que é igual ao antigo
-                }
-                // Se nem GTIN nem 'ativo' mudaram, o índice não precisa de ser tocado.
-            }
+            // A mudança de 'ativo' NÃO afeta o índice nesta implementação.
             return true;
         }
         return false;
     }
 
     /**
-     * Realiza uma exclusão lógica (soft delete) de um produto.
-     * O produto é marcado como 'inativo' e é removido do índice de GTIN
-     * (através da chamada a {@code this.update()}), mas permanece no arquivo de dados.
-     *
-     * @param id O ID (inteiro) do produto a ser inativado.
-     * @return {@code true} se a inativação for bem-sucedida, {@code false}
-     * caso contrário (ex: produto não encontrado ou já inativo).
-     * @throws Exception se ocorrer um erro durante a operação de atualização.
+     * Inativa um produto (soft delete). Altera o estado 'ativo' para 'false'
+     * no ficheiro principal. O produto NÃO é removido do índice de GTIN.
+     * @param id O ID do produto a ser inativado.
+     * @return true se a operação for bem-sucedida, false caso contrário.
+     * @throws Exception se ocorrer um erro de acesso aos ficheiros.
      */
     @Override
     public boolean delete(int id) throws Exception {
         Produto produto = super.read(id);
         if (produto == null || !produto.isAtivo()) {
-            return false;
+            return false; // Não pode inativar um produto inexistente ou já inativo
         }
 
+        // Marca como inativo
         produto.setAtivo(false);
         
+        // Chama o update() desta classe, que apenas atualizará o registo no ficheiro,
+        // sem remover a entrada do índice.
         return this.update(produto);
     }
 
     /**
-     * Lê todos os produtos do arquivo de dados, iterando pelos IDs.
-     *
-     * @param incluirInativos Se {@code true}, a lista de retorno incluirá produtos
-     * marcados como inativos. Se {@code false},
-     * retornará apenas produtos ativos.
-     * @return Uma {@code List<Produto>} contendo os produtos encontrados.
-     * @throws Exception se ocorrer um erro durante a leitura do arquivo.
+     * Lê todos os produtos do ficheiro, com a opção de incluir ou não os inativos.
+     * @param incluirInativos Se true, inclui produtos inativos na lista.
+     * @return Uma lista de produtos.
+     * @throws Exception se ocorrer um erro de leitura.
      */
-    public List<Produto> readAll(boolean incluirInativos) throws Exception {
+    public List<Produto> readAllProdutos(boolean incluirInativos) throws Exception {
         List<Produto> produtos = new ArrayList<>();
         int ultimoID = 0;
         
-        this.arquivo.seek(0);
-        ultimoID = this.arquivo.readInt();
+        if (this.arquivo.length() >= 4) {
+            this.arquivo.seek(0);
+            ultimoID = this.arquivo.readInt();
+        } else {
+            return produtos; // Retorna a lista vazia
+        }
         
         for (int i = 1; i <= ultimoID; i++) {
             Produto p = super.read(i);
@@ -186,12 +146,6 @@ public class CRUDProduto extends Arquivo<Produto> {
         return produtos;
     }
 
-    /**
-     * Fecha as conexões com os arquivos de dados gerenciados por este
-     * controlador.
-     *
-     * @throws Exception se ocorrer um erro ao fechar o recurso.
-     */
     @Override
     public void close() throws Exception {
         super.close();

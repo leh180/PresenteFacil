@@ -53,7 +53,7 @@ public class ControleProduto {
      *
      * @param usuarioLogado O usuário atualmente autenticado na sessão.
      */
-    public void menuProdutos(Usuario usuarioLogado) {
+    public void menuPrincipal(Usuario usuarioLogado) {
         String opcao;
         do {
             opcao = visaoProduto.menuPrincipalProdutos();
@@ -62,7 +62,8 @@ public class ControleProduto {
                     buscarProdutoPorGtin(usuarioLogado);
                     break;
                 case "2":
-                    listarProdutosPaginado(usuarioLogado);
+                    // Mostra apenas produtos ATIVOS na listagem principal
+                    listarProdutosPaginado(usuarioLogado, false); 
                     break;
                 case "3":
                     cadastrarNovoProduto();
@@ -91,6 +92,7 @@ public class ControleProduto {
         String opcao;
         do {
             try {
+                // Consulta Cruzada para encontrar as listas
                 List<ListaProduto> associacoes = crudListaProduto.readAllByProduto(produto.getID());
                 List<Lista> listasDoUsuario = new ArrayList<>();
                 int countOutrasListas = 0;
@@ -107,6 +109,7 @@ public class ControleProduto {
                 }
                 Collections.sort(listasDoUsuario, Comparator.comparing(Lista::getNome, String.CASE_INSENSITIVE_ORDER));
 
+                // A visão exibe os detalhes e o menu de ações apropriado (Inativar/Reativar)
                 opcao = visaoProduto.mostrarDetalhesProduto(produto, listasDoUsuario, countOutrasListas);
 
                 switch (opcao) {
@@ -119,7 +122,8 @@ public class ControleProduto {
                         } else {
                             reativarProduto(produto);
                         }
-                        return;
+                        // Sai do menu de detalhes para forçar o recarregamento do estado.
+                        return; 
                     case "r":
                         break;
                     default:
@@ -129,7 +133,8 @@ public class ControleProduto {
                 }
             } catch(Exception e) {
                 visaoUsuario.mostrarMensagem("ERRO ao gerir o produto: " + e.getMessage());
-                opcao = "r";
+                e.printStackTrace(); // Útil para depuração
+                opcao = "r"; // Força a saída em caso de erro.
             }
         } while (!opcao.equals("r"));
     }
@@ -141,22 +146,24 @@ public class ControleProduto {
      * @param usuarioLogado O usuário autenticado, necessário para o submenu de
      * gerenciamento.
      */
-    private void listarProdutosPaginado(Usuario usuarioLogado) {
+    private void listarProdutosPaginado(Usuario usuarioLogado, boolean incluirInativos) {
         try {
-            List<Produto> todosProdutos = crudProduto.readAll(true);
-            Collections.sort(todosProdutos, Comparator.comparing(Produto::getNome, String.CASE_INSENSITIVE_ORDER));
+            // Chama o método correto do CRUD com o filtro
+            List<Produto> produtosParaListar = crudProduto.readAllProdutos(incluirInativos); 
+            Collections.sort(produtosParaListar, Comparator.comparing(Produto::getNome, String.CASE_INSENSITIVE_ORDER));
 
             int ITENS_POR_PAGINA = 10;
-            int totalPaginas = (int) Math.ceil((double) todosProdutos.size() / ITENS_POR_PAGINA);
+            int totalPaginas = (int) Math.ceil((double) produtosParaListar.size() / ITENS_POR_PAGINA);
             if (totalPaginas == 0) totalPaginas = 1;
             int paginaAtual = 1;
             String opcao;
             do {
                 int inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
-                int fim = Math.min(inicio + ITENS_POR_PAGINA, todosProdutos.size());
-                List<Produto> produtosPagina = todosProdutos.subList(inicio, fim);
+                int fim = Math.min(inicio + ITENS_POR_PAGINA, produtosParaListar.size());
+                List<Produto> produtosPagina = produtosParaListar.subList(inicio, fim);
 
-                opcao = visaoProduto.mostrarListagemPaginada(produtosPagina, paginaAtual, totalPaginas);
+                // A visão agora só exibe o nome, sem "(INATIVADO)" para a lista principal
+                opcao = visaoProduto.mostrarListagemPaginada(produtosPagina, paginaAtual, totalPaginas); 
 
                 switch (opcao) {
                     case "p":
@@ -171,9 +178,11 @@ public class ControleProduto {
                         try {
                             int indice = Integer.parseInt(opcao) - 1;
                             if (indice >= 0 && indice < produtosPagina.size()) {
+                                // Chama o menu de gestão para o produto selecionado
                                 gerenciarProduto(produtosPagina.get(indice), usuarioLogado);
-                                listarProdutosPaginado(usuarioLogado);
-                                return;
+                                // Força recarregamento da lista ao voltar, caso algo tenha mudado (ex: reativação)
+                                listarProdutosPaginado(usuarioLogado, incluirInativos); 
+                                return; 
                             } else {
                                 visaoUsuario.mostrarMensagem("ERRO: Opção numérica inválida!");
                             }
@@ -198,19 +207,11 @@ public class ControleProduto {
      */
     private void cadastrarNovoProduto() {
         try {
-            Produto novoProduto = visaoProduto.lerDadosNovoProduto();
-
-            // Regra de Negócio: Verifica se o GTIN já existe antes de criar
-            if (crudProduto.readByGtin(novoProduto.getGtin()) != null) {
-                visaoUsuario.mostrarMensagem("\nERRO: O GTIN " + novoProduto.getGtin() + " já está cadastrado!");
-            } else {
-                int id = crudProduto.create(novoProduto);
-                visaoUsuario.mostrarMensagem(
-                        "\nProduto \"" + novoProduto.getNome() + "\" (ID: " + id + ") cadastrado com sucesso!");
-            }
+            Produto p = visaoProduto.lerDadosNovoProduto();
+            int id = crudProduto.create(p);
+            visaoUsuario.mostrarMensagem("Produto \"" + p.getNome() + "\" cadastrado com sucesso! (ID: " + id + ")");
         } catch (Exception e) {
-            visaoUsuario.mostrarMensagem("\nERRO ao cadastrar produto: " + e.getMessage());
-            e.printStackTrace();
+            visaoUsuario.mostrarMensagem("ERRO ao cadastrar produto: " + e.getMessage());
         }
         visaoUsuario.pausa();
     }
@@ -223,12 +224,11 @@ public class ControleProduto {
     private void buscarProdutoPorGtin(Usuario usuarioLogado) {
         String gtin = visaoProduto.lerGtinBusca();
         try {
-            Produto produto = crudProduto.readByGtin(gtin);
+            Produto produto = crudProduto.readByGtin(gtin); 
             if (produto != null) {
-                // Se o produto foi encontrado, chama o menu de detalhes para geri-lo
                 gerenciarProduto(produto, usuarioLogado);
             } else {
-                visaoUsuario.mostrarMensagem("\nNenhum produto encontrado com o GTIN \"" + gtin + "\".");
+                visaoUsuario.mostrarMensagem("\nNenhum produto (ativo ou inativo) encontrado com o GTIN \"" + gtin + "\".");
                 visaoUsuario.pausa();
             }
         } catch (Exception e) {
@@ -246,11 +246,8 @@ public class ControleProduto {
     private void alterarProduto(Produto produto) {
         try {
             Produto dadosAlterados = visaoProduto.lerDadosAlteracao(produto);
-            
-            // Atualiza o objeto original com os novos dados
             produto.setNome(dadosAlterados.getNome());
             produto.setDescricao(dadosAlterados.getDescricao());
-
             if (crudProduto.update(produto)) {
                 visaoUsuario.mostrarMensagem("\nProduto alterado com sucesso!");
             } else {
@@ -258,7 +255,6 @@ public class ControleProduto {
             }
         } catch (Exception e) {
             visaoUsuario.mostrarMensagem("\nERRO ao alterar produto: " + e.getMessage());
-            e.printStackTrace();
         }
         visaoUsuario.pausa();
     }
@@ -273,17 +269,21 @@ public class ControleProduto {
      * @throws Exception se ocorrer um erro durante a operação de exclusão
      * lógica no CRUD.
      */
-    private void inativarProduto(Produto produto, int totalAssociacoes) throws Exception {
+    private void inativarProduto(Produto produto, int totalAssociacoes) {
         if (totalAssociacoes > 0) {
             visaoUsuario.mostrarMensagem("\nERRO: Não é possível inativar um produto que está associado a " + totalAssociacoes + " lista(s).");
             visaoUsuario.pausa();
             return;
         }
         if (visaoProduto.confirmarAcao("inativar", produto.getNome())) {
-            if (crudProduto.delete(produto.getID())) {
-                visaoUsuario.mostrarMensagem("\nProduto inativado com sucesso!");
-            } else {
-                visaoUsuario.mostrarMensagem("\nFalha ao inativar o produto.");
+            try {
+                if (crudProduto.delete(produto.getID())) { // delete() inativa o produto
+                    visaoUsuario.mostrarMensagem("\nProduto inativado com sucesso!");
+                } else {
+                    visaoUsuario.mostrarMensagem("\nFalha ao inativar o produto.");
+                }
+            } catch (Exception e) {
+                visaoUsuario.mostrarMensagem("\nERRO ao inativar produto: " + e.getMessage());
             }
         }
         visaoUsuario.pausa();
@@ -297,13 +297,17 @@ public class ControleProduto {
      * @throws Exception se ocorrer um erro durante a operação de atualização no
      * CRUD.
      */
-    private void reativarProduto(Produto produto) throws Exception {
+    private void reativarProduto(Produto produto) {
         if (visaoProduto.confirmarAcao("reativar", produto.getNome())) {
-            produto.setAtivo(true);
-            if (crudProduto.update(produto)) {
-                visaoUsuario.mostrarMensagem("\nProduto reativado com sucesso!");
-            } else {
-                visaoUsuario.mostrarMensagem("\nFalha ao reativar o produto.");
+            try {
+                produto.setAtivo(true);
+                if (crudProduto.update(produto)) {
+                    visaoUsuario.mostrarMensagem("\nProduto reativado com sucesso!");
+                } else {
+                    visaoUsuario.mostrarMensagem("\nFalha ao reativar o produto.");
+                }
+            } catch (Exception e) {
+                visaoUsuario.mostrarMensagem("\nERRO ao reativar produto: " + e.getMessage());
             }
         }
         visaoUsuario.pausa();

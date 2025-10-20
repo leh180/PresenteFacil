@@ -22,12 +22,6 @@ public class ParIdProdutoListaProduto implements RegistroArvoreBMais<ParIdProdut
 
     private int idProduto; // Chave de busca (ID do Produto)
     private int idListaProduto; // Valor (ID do registro ListaProduto)
-    
-    /**
-     * Tamanho fixo do registro em bytes.
-     * (4 bytes para idProduto) + (4 bytes para idListaProduto).
-     * Total: 8 bytes.
-     */
     private final short TAMANHO = 8;
 
     // --- Construtores ---
@@ -136,11 +130,14 @@ public class ParIdProdutoListaProduto implements RegistroArvoreBMais<ParIdProdut
      */
     @Override
     public int compareTo(ParIdProdutoListaProduto outro) {
-        if (this.idProduto != outro.idProduto) {
-            return Integer.compare(this.idProduto, outro.idProduto);
-        } else {
-            return Integer.compare(this.idListaProduto, outro.idListaProduto);
+        if (this.idProduto < outro.idProduto) return -1;
+        if (this.idProduto > outro.idProduto) return 1;
+
+        if (this.idListaProduto == -1 || outro.idListaProduto == -1) {
+            return 0;
         }
+
+        return Integer.compare(this.idListaProduto, outro.idListaProduto);
     }
 
     /**
