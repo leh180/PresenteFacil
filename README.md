@@ -23,21 +23,61 @@ O projeto foi construído em Java, utilizando um sistema de persistência de dad
 ---
 ### 🎥 Vídeos de Demonstração:
 
-[VideoTP1](https://youtu.be/IlUBODiJDhQ)
+TP1 - Cadastro de Usuários e Gestão de Listas: [Assista aqui](https://youtu.be/IlUBODiJDhQ)
+
+TP2 - Gestão de Produtos e Associações N:N: [Assista aqui](https://youtu.be/)
+
+
 
 ---
 
-### 🚀 Funcionalidades Principais
+### 🚀 Evolução das Funcionalidades
+O segundo trabalho prático expandiu o sistema para incluir a gestão de produtos e a sua associação às listas de presentes, introduzindo um relacionamento N:N (Lista <-> Produto). As principais funcionalidades adicionadas são: 
 
-* **Autenticação e Gestão de Usuários**: O sistema possui um fluxo completo de autenticação, permitindo o cadastro de novos utilizadores e o login via e-mail e senha (armazenada em formato de hash para segurança). O acesso é feito via e-mail e senha. O utilizador autenticado pode visualizar, alterar ou excluir os seus próprios dados, além de poder recuperar sua senha por meio de pergunta e resposta secretas.
+#### Contexto do TP1: Usuários e Listas
 
-* **Criação de Listas de Presentes**: Um usuário pode criar múltiplas listas, cada uma com um nome, descrição e, opcionalmente, uma data limite. Cada lista é vinculada a um único usuário.
+No primeiro trabalho prático, o foco foi na implementação das entidades Usuario e Lista, estabelecendo o relacionamento 1:N (um usuário pode ter várias listas). As funcionalidades principais incluíam:
 
-* **CRUD Completo de Listas**: Um utilizador autenticado pode criar, ler, atualizar e excluir múltiplas listas de presentes. Cada lista é vinculada unicamente ao seu criador, estabelecendo um relacionamento 1-N. A navegação é intuitiva, utilizando menus textuais e um "rastro" (breadcrumb) para indicar a localização do usuário no sistema.
-  
-* **Visualização e Compartilhamento**: Para cada lista criada, o sistema gera automaticamente um código compartilhável único, alfanumérico de 10 caracteres (semelhante ao NanoID). Esse código permite que o criador da lista a compartilhe com outras pessoas, que poderão visualizar o conteúdo.
-  
-* **Interface de Linha de Comando Intuitiva**: A navegação é realizada através de menus textuais simples. O sistema utiliza um "breadcrumb" (ex: > Início > Minhas Listas) para que o utilizador saiba sempre a sua localização na aplicação.
+* Autenticação e Gestão de Utilizadores: Cadastro de novos utilizadores, login via e-mail e senha (armazenada em hash SHA-256), e gestão de dados pessoais (alterar/excluir conta).
+
+* Criação e CRUD de Listas de Presentes: Utilizadores podem criar, ler, atualizar e excluir múltiplas listas, cada uma com nome, descrição e data limite opcional.
+
+* Compartilhamento de Listas: Cada lista gera um código alfanumérico único, permitindo a visualização por outros utilizadores.
+
+* Interface de Linha de Comando: Navegação intuitiva com menus textuais e "breadcrumbs".
+
+#### CRUD Completo de Produtos:
+
+* Cadastro: Inclusão de novos produtos com GTIN-13 (tratado como String), Nome e Descrição. É garantida a unicidade do GTIN.
+
+* Busca: Procura de produtos por GTIN-13.
+
+* Listagem Paginada: Exibição de todos os produtos cadastrados (ativos ou inativos), ordenados por nome, com paginação de 10 elementos por página.
+
+* Inativação/Reativação: Produtos podem ser inativados (soft delete), permanecendo na base de dados, mas não visíveis para novas associações. Um produto não pode ser inativado se estiver associado a alguma lista.
+
+#### Relacionamento N:N (Lista <-> Produto):
+
+* Implementado através de uma entidade de associação ListaProduto, que guarda ID Lista, ID Produto, Quantidade e Observações.
+
+* Utiliza duas Árvores B+ como índices: uma para (idLista; idListaProduto) e outra para (idProduto; idListaProduto), permitindo consultas eficientes de ambos os lados do relacionamento.
+
+#### Gestão de Produtos em Listas:
+
+* Adicionar Produtos: Dentro de uma lista, é possível adicionar produtos existentes buscando por GTIN-13.
+
+* Alterar/Remover Associações: É possível alterar a quantidade e as observações de um produto específico dentro de uma lista, ou removê-lo completamente.
+
+#### Consultas Cruzadas:
+
+* Na tela de detalhes de um produto, o sistema exibe em quais listas pessoais (do utilizador logado) ele aparece e a quantidade de listas de outros utilizadores em que o produto também está.
+
+#### Integridade Referencial:
+
+* Ao excluir uma lista, todas as suas associações (ListaProduto) são automaticamente excluídas (exclusão em cascata).
+
+* Um produto não pode ser inativado se ainda estiver associado a qualquer lista.
+
 
 ---
 
@@ -49,56 +89,60 @@ Abaixo estão as principais telas do sistema.
 
 ![Tela Login](imagens/TelaLogin.png)
 
-* Tela de Cadastro de Usuário:
-
-![Cadastro](imagens/Cadastro.png)
-
 * Menu Principal:
 
 ![Tela Inicial](imagens/TelaInical.png)
 
-* Tela de criação de Lista:
+* Menu de Produtos:
 
-![Criar Lista](imagens/CriarLista.png) 
+![Menu de Produtos](imagens/TelaInical.png)
 
-* Exibição de Listas do Usuário:
+* Listagem Paginada de Produtos:
 
-![Minhas Listas](imagens/MinhasListas.png)
+![Listagem Paginada de Produtos](imagens/TelaInical.png)
 
-* Tela de Compartilhamento por NanoID:
+* Detalhes do Produto:
 
-![Listas Outros](imagens/ListasOutro.png)
+![Detalhes do Produto](imagens/TelaInical.png)
 
-* Tela de Exibição dos Dados do Usuário:
+* Gerenciar Produtos na Lista:
 
-![Meus Dados](imagens/TelaDados.png) 
+![Gerenciar Produtos na Lista](imagens/TelaInical.png)
 
 ---
 ### ⚙️ Arquitetura e Principais Classes 
 
 O sistema foi desenvolvido seguindo o padrão MVC (Model-View-Controller) para separar as responsabilidades de dados, interface e lógica de controlo, por meio de diversas classes, as principais são:
 
-* ***Usuario***: A classe representa os dados da entidade "Usuário" no sistema. Ela cria o usuario, aplica HashExtensivel na senha e implementa a a interface 'Entidade' para ser compatível com o sistema de arquivos genérico.
-  
-* ***CRUDUsuario***: A classe CRUDUsuario estende a classe genérica Arquivo e gere todas as operações de persistência para a entidade Usuário. Ela mantém um índice secundário por e-mail (Hash Extensível) para acelerar as buscas e o processo de login.
-  
-* ***Lista***: A classe representa a entidade "Lista de Presentes" no sistema. Ela implementa a interface 'Entidade' para ser compatível com o sistema de arquivos genérico e 'Comparable' para permitir a ordenação alfabética das listas pelo nome.
+* Usuario: Representa a entidade "Utilizador". Armazena os dados pessoais e implementa a interface Entidade para ser compatível com o sistema de ficheiros. A senha é guardada de forma segura através de um hash SHA-256, e não em texto plano.
 
-* ***CRUDLista***: A classe CRUDLista estende a classe genérica Arquivo e gere todas as operações de persistência para a entidade Lista. Ela mantém um índice secundário por código (Hash Extensível) para buscas públicas e um índice de relacionamento (Árvore B+) para ligar utilizadores às suas listas.
+* CRUDUsuario: Estende a classe genérica Arquivo e gere a persistência da entidade Usuario. Mantém um índice secundário HashExtensivel para o e-mail, otimizando o processo de login e evitando duplicados.
 
-* ***ControleLista***: A classe é responsável por gerir toda a lógica de negócio relacionada às listas, atuando como o intermediário entre as classes de modelo (dados) e as classes de visão (interface com o utilizador).
-  
-* ***ControlePrincipal***: A classe é o ponto de entrada da aplicação. Ela é responsável por orquestrar o fluxo principal do sistema, gerindo o login, a criação de utilizadores e o acesso aos menus de funcionalidades após a autenticação.
-  
-* ***ControleUsuario***: A classe 'ControleUsuario' é responsável por gerenciar toda a lógica de negócio relacionada aos usuários, como autenticação, cadastro e gerenciamento de perfil. Ela atua como um mediador entre as classes de persistência (CRUD) e a interface com o usuário (VisaoUsuario).
-  
-* ***Arquivo***: A classe genérica 'Arquivo' é responsável por implementar o CRUD de base com reutilização de espaço (lista de espaços livres).
-  
-* ***ArvoreBMais***: A classe 'ArvoreBMais' é responsável por implementar uma árvore B+ para índice indireto que gere o relacionamento 1-N entre utilizadores e listas.
-  
-* ***HashExtensivel***: A classe 'HashExtensivel' é responsável por implementar uma tabela HashExtensivel, usada para os índices de acesso direto (e-mail do utilizador e código da lista).
-  
----
+* Lista: Representa a entidade "Lista de Presentes". Implementa Entidade para serialização e Comparable para permitir a ordenação alfabética das listas.
+
+* CRUDLista: Estende Arquivo e gere a persistência da entidade Lista. No TP1, implementou o relacionamento 1:N através de uma ArvoreBMais que liga idUsuario a idLista.
+
+* Produto: A nova entidade que representa um "Produto", com atributos como GTIN, nome, descrição e um estado de ativo.
+
+* CRUDProduto: Estende Arquivo e gere a persistência da entidade Produto. Mantém um índice secundário HashExtensivel para o GTIN, permitindo buscas rápidas. Implementa a lógica de "soft delete" (inativação/reativação).
+
+* ListaProduto: A entidade de associação que representa o relacionamento N:N entre Lista e Produto. Armazena chaves estrangeiras (idLista, idProduto), quantidade e observações.
+
+* CRUDListaProduto: Estende Arquivo e gere a persistência da entidade ListaProduto. É o coração do relacionamento N:N, mantendo duas ArvoreBMais para permitir buscas eficientes em ambas as direções (Lista -> Produtos e Produto -> Listas).
+
+* ControlePrincipal: É o ponto de entrada e o orquestrador geral da aplicação. Gere o estado da sessão (login/logout) e delega as tarefas para os controladores específicos.
+
+* ControleUsuario: Contém a lógica de negócio para autenticação, cadastro e gestão do perfil do utilizador.
+
+* ControleLista: Gere a lógica de negócio das listas. No TP2, foi expandido para incluir a gestão de produtos dentro de uma lista (adicionar, alterar quantidade/observações, remover).
+
+* ControleProduto: O novo controlador que gere toda a lógica de negócio da secção global de "Produtos", incluindo a listagem paginada, o cadastro e as consultas cruzadas.
+
+* Arquivo: A classe genérica fornecida que implementa o CRUD de base para qualquer entidade, incluindo a gestão de espaços livres (reutilização de registos apagados).
+
+* ArvoreBMais: A estrutura de dados fornecida, usada para implementar os índices de relacionamento 1:N (Usuario -> Lista) e N:N (Lista <-> Produto).
+
+* HashExtensivel: A estrutura de dados fornecida, usada para implementar os índices de acesso direto por chave, como o e-mail do utilizador, o código da lista e o GTIN do produto.
 
 ### ✅ Checklist
 
@@ -110,9 +154,11 @@ O sistema foi desenvolvido seguindo o padrão MVC (Model-View-Controller) para s
 |Há uma árvore B+ que registre o relacionamento 1:N entre usuários e listas?|[✅]|
 |Há um CRUD de usuários (que estende a classe ArquivoIndexado, acrescentando Tabelas Hash Extensíveis e Árvores B+ como índices diretos e indiretos conforme necessidade)?|[✅]|
 |Há uma visualização das listas de outras pessoas por meio de um código NanoID?|[✅]|
+|CRUD de produtos funcional, com CRUDProduto usando HashExtensivel como índice de GTIN e incluindo lógica de inativação (soft delete).|[✅]|
+|CRUD da entidade de associação ListaProduto funcional, utilizando duas ArvoreBMais para indexar o relacionamento N:N e permitir buscas eficientes.|[✅]|
+|Visão de produtos implementada, com consulta cruzada que exibe as listas pessoais onde um produto aparece e a contagem de listas de outros.|[✅]|
+|Visão de listas expandida, permitindo a gestão completa de produtos dentro de uma lista (adicionar, alterar e remover).|[✅]|
+|Integridade do relacionamento N:N mantida, com regras que impedem a inativação de produtos em uso e garantem a exclusão em cascata.|[✅]|
 |O trabalho compila corretamente?|[✅]|
 |O trabalho está completo e funcionando sem erros de execução?|[✅]|
 |O trabalho é original e não a cópia de um trabalho de outro grupo?|[✅]|
-
-
-
