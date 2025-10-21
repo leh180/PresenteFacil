@@ -2,6 +2,7 @@ package controller;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import model.CRUDLista;
 import model.CRUDListaProduto;
@@ -229,34 +230,105 @@ public class ControleLista {
      */
     private void menuAcrescentarProduto(Lista lista) {
         String opcao = visaoLista.menuAcrescentarProduto();
-        if(opcao.equals("1")) {
-            String gtin = visaoLista.pedirGtinParaAdicionar();
-            try {
-                Produto p = crudProduto.readByGtin(gtin);
-                if(p != null) {
-                    if (p.isAtivo()) {
-                        if (crudListaProduto.findAssociacao(lista.getID(), p.getID()) != null) {
-                            visaoUsuario.mostrarMensagem("ERRO: O produto \"" + p.getNome() + "\" já está nesta lista.");
-                        } else {
-                            int qtd = visaoLista.pedirNovaQuantidade(1);
-                            String obs = visaoLista.pedirNovasObservacoes("");
-                            ListaProduto lp = new ListaProduto(-1, lista.getID(), p.getID(), qtd, obs);
-                            crudListaProduto.create(lp);
-                            visaoUsuario.mostrarMensagem("Produto \"" + p.getNome() + "\" adicionado à lista!");
-                        }
+        switch (opcao) {
+            case "1": // Busca por GTIN
+                String gtin = visaoLista.pedirGtinParaAdicionar();
+                try {
+                    Produto p = crudProduto.readByGtin(gtin);
+                    if (p != null) {
+                        adicionarProdutoConfirmado(lista, p);
                     } else {
-                        visaoUsuario.mostrarMensagem("ERRO: Este produto está inativo e não pode ser adicionado.");
+                        visaoUsuario.mostrarMensagem("Nenhum produto (ativo ou inativo) encontrado com o GTIN informado.");
                     }
-                } else {
-                    visaoUsuario.mostrarMensagem("Nenhum produto encontrado com o GTIN informado (pode estar inativo ou não existir).");
+                } catch (Exception e) {
+                    visaoUsuario.mostrarMensagem("ERRO ao adicionar produto: " + e.getMessage());
                 }
-            } catch(Exception e) {
-                visaoUsuario.mostrarMensagem("ERRO ao adicionar produto: " + e.getMessage());
-            }
-        } else if (opcao.equals("2")) {
-            visaoUsuario.mostrarMensagem("Para adicionar um produto, utilize a busca por GTIN.\nConsulte o menu 'Produtos' no menu principal para encontrar o GTIN desejado.");
+                break;
+            case "2": // Listar todos os produtos
+                listarProdutosParaAdicionar(lista);
+                break;
+            case "r":
+                break;
+            default:
+                visaoUsuario.mostrarMensagem("Opção inválida!");
+                break;
         }
         visaoUsuario.pausa();
+    }
+
+    /**
+     * Exibe uma lista paginada de todos os produtos ATIVOS para que o utilizador
+     * possa escolher qual adicionar à lista.
+     * @param lista A lista à qual o produto será adicionado.
+     */
+    private void listarProdutosParaAdicionar(Lista lista) {
+        try {
+            // Busca apenas produtos ativos
+            List<Produto> todosProdutos = crudProduto.readAllProdutos(false);
+            Collections.sort(todosProdutos, Comparator.comparing(Produto::getNome, String.CASE_INSENSITIVE_ORDER));
+
+            int ITENS_POR_PAGINA = 10;
+            int totalPaginas = (int) Math.ceil((double) todosProdutos.size() / ITENS_POR_PAGINA);
+            if (totalPaginas == 0) totalPaginas = 1;
+            int paginaAtual = 1;
+            String opcao;
+
+            do {
+                int inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+                int fim = Math.min(inicio + ITENS_POR_PAGINA, todosProdutos.size());
+                List<Produto> produtosPagina = todosProdutos.subList(inicio, fim);
+
+                opcao = visaoLista.mostrarListagemParaAdicionar(produtosPagina, paginaAtual, totalPaginas);
+
+                switch (opcao) {
+                    case "p":
+                        if (paginaAtual < totalPaginas) paginaAtual++;
+                        break;
+                    case "a":
+                        if (paginaAtual > 1) paginaAtual--;
+                        break;
+                    case "r":
+                        break;
+                    default:
+                        try {
+                            int indice = Integer.parseInt(opcao) - 1;
+                            if (indice >= 0 && indice < produtosPagina.size()) {
+                                // Se o utilizador escolheu um produto válido, adiciona-o à lista
+                                adicionarProdutoConfirmado(lista, produtosPagina.get(indice));
+                                return; // Retorna para o menu anterior após adicionar
+                            } else {
+                                visaoUsuario.mostrarMensagem("ERRO: Opção numérica inválida!");
+                            }
+                        } catch (NumberFormatException e) {
+                            visaoUsuario.mostrarMensagem("ERRO: Opção inválida!");
+                        }
+                        break;
+                }
+            } while (!opcao.equals("r"));
+
+        } catch (Exception e) {
+            visaoUsuario.mostrarMensagem("\nERRO ao listar produtos para adicionar: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Lógica centralizada para adicionar um produto a uma lista após ele ser encontrado
+     * (seja por GTIN ou pela listagem).
+     */
+    private void adicionarProdutoConfirmado(Lista lista, Produto produto) throws Exception {
+        if (produto.isAtivo()) {
+            if (crudListaProduto.findAssociacao(lista.getID(), produto.getID()) != null) {
+                visaoUsuario.mostrarMensagem("ERRO: O produto \"" + produto.getNome() + "\" já está nesta lista.");
+            } else {
+                int qtd = visaoLista.pedirNovaQuantidade(1);
+                String obs = visaoLista.pedirNovasObservacoes("");
+                ListaProduto lp = new ListaProduto(-1, lista.getID(), produto.getID(), qtd, obs);
+                crudListaProduto.create(lp);
+                visaoUsuario.mostrarMensagem("Produto \"" + produto.getNome() + "\" adicionado à lista!");
+            }
+        } else {
+            visaoUsuario.mostrarMensagem("ERRO: Este produto está inativo e não pode ser adicionado.");
+        }
     }
     
     /**

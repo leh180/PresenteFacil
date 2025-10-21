@@ -363,4 +363,34 @@ public class VisaoLista {
             return valorAntigo;
         }
     }
+
+    /**
+     * Exibe uma lista paginada de produtos disponíveis para serem adicionados a uma lista.
+     * @param produtos A lista de produtos da página atual.
+     * @param paginaAtual O número da página atual.
+     * @param totalPaginas O número total de páginas.
+     * @return A opção escolhida pelo utilizador.
+     */
+    public String mostrarListagemParaAdicionar(List<Produto> produtos, int paginaAtual, int totalPaginas) {
+        System.out.println("\n-----------------");
+        System.out.println("> ... > Acrescentar produto > Listagem");
+        System.out.println("\nPágina " + paginaAtual + " de " + totalPaginas + "\n");
+        System.out.println("Escolha um produto para adicionar à sua lista:");
+
+        if (produtos.isEmpty()) {
+            System.out.println("Nenhum produto ativo encontrado.");
+        } else {
+            for (int i = 0; i < produtos.size(); i++) {
+                Produto p = produtos.get(i);
+                System.out.println("(" + (i + 1) + ") " + p.getNome());
+            }
+        }
+
+        System.out.println();
+        if (paginaAtual > 1) System.out.println("(A) Página anterior");
+        if (paginaAtual < totalPaginas) System.out.println("(P) Próxima página");
+        System.out.println("\n(R) Retornar");
+        System.out.print("\nOpção: ");
+        return teclado.nextLine().toLowerCase().trim();
+    }
 }
