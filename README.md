@@ -25,7 +25,7 @@ O projeto foi construído em Java, utilizando um sistema de persistência de dad
 
 TP1 - Cadastro de Usuários e Gestão de Listas: [Assista aqui](https://youtu.be/IlUBODiJDhQ)
 
-TP2 - Gestão de Produtos e Associações N:N: [Assista aqui]([https://youtu.be/](https://youtu.be/zhZKEX3NzhI))
+TP2 - Gestão de Produtos e Associações N:N: [Assista aqui](https://youtu.be/zhZKEX3NzhI)
 
 
 
