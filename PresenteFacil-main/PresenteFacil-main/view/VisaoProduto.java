@@ -30,6 +30,7 @@ public class VisaoProduto {
         System.out.println("\n(1) Buscar produtos por GTIN");
         System.out.println("(2) Listar todos os produtos");
         System.out.println("(3) Cadastrar um novo produto");
+        System.out.println("(4) Buscar produtos por termo");
         System.out.println("\n(R) Retornar ao menu anterior");
         System.out.print("\nOpção: ");
         return teclado.nextLine().toLowerCase();
@@ -148,6 +149,21 @@ public class VisaoProduto {
 
         // GTIN e estado de ativação não são alterados aqui.
         return new Produto(produtoAtual.getID(), produtoAtual.getGtin(), nome, descricao, produtoAtual.isAtivo());
+    }
+
+    public String lerTermoBusca() {
+        System.out.print("\nDigite o termo de busca (parte do nome do produto): ");
+        return teclado.nextLine().trim();
+    }
+
+    public void mostrarResultadosBusca(List<Produto> resultados) {
+        System.out.println("\n=== Resultados da Busca ===");
+        for (Produto p : resultados) {
+            System.out.println("- " + p.getNome() + " (GTIN: " + p.getGtin() + ")");
+        }
+        if (resultados.isEmpty()) {
+            System.out.println("Nenhum produto encontrado.");
+        }
     }
 
     /**

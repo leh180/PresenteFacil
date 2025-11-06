@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import bib.ListaInvertida;
 import model.CRUDProduto;
 import model.Produto;
 import view.VisaoProduto;
@@ -51,6 +52,9 @@ public class ControleProduto {
                     break;
                 case "3":
                     cadastrarNovoProduto();
+                    break;
+                case "4":
+                    buscarProdutoPorTermo();
                     break;
                 case "r":
                     break;
@@ -202,6 +206,33 @@ public class ControleProduto {
             e.printStackTrace();
             visaoUsuario.pausa();
         }
+    }
+
+    private void buscarProdutoPorTermo() {
+        try {
+            String busca = visaoProduto.lerTermoBusca();
+            if (busca == null || busca.trim().isEmpty()) {
+                visaoUsuario.mostrarMensagem("Termo de busca vazio!");
+                visaoUsuario.pausa();
+                return;
+            }
+
+            // Normaliza os termos (remoção de acentos, stop words, etc.)
+            List<String> termos = ListaInvertida.prepararTermos(busca);
+
+            // Realiza a busca no índice invertido
+            List<Produto> resultados = crudProduto.buscarPorTermos(termos);
+
+            if (resultados.isEmpty()) {
+                visaoUsuario.mostrarMensagem("Nenhum produto encontrado para os termos: " + busca);
+            } else {
+                visaoProduto.mostrarResultadosBusca(resultados);
+            }
+        } catch (Exception e) {
+            visaoUsuario.mostrarMensagem("ERRO ao buscar produtos: " + e.getMessage());
+            e.printStackTrace();
+        }
+        visaoUsuario.pausa();
     }
 
     /**
