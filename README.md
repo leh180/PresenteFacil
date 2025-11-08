@@ -1,6 +1,6 @@
 ## 🎁 PresenteFácil 3.0 🎁
 
-_Algoritimos e Estrutura de Dados III — Trabalho Prático 01_
+_Algoritimos e Estrutura de Dados III — Trabalho Prático_
 
 ---
 
