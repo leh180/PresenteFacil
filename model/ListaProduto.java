@@ -2,7 +2,6 @@ package model;
 
 import bib.Entidade;
 import java.io.*;
-import java.util.ArrayList;
 
 /**
  * Entidade com associação N:N de lista e produto.

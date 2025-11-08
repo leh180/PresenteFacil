@@ -44,16 +44,31 @@ public class VisaoLista {
     /**
      * Mostra os detalhes de uma lista e, opcionalmente, o menu de gestão.
      */
-    public String mostrarDetalhesLista(Lista lista, String nomeProprietario, boolean mostrarMenuGestao) {
+    public String mostrarDetalhesLista(Lista lista, String nomeProprietario,
+            List<Pair<Produto, ListaProduto>> produtosDaLista, boolean mostrarMenuGestao) {
         System.out.println("\n-----------------");
         System.out.println("\nProprietário: " + nomeProprietario);
         System.out.println("CÓDIGO: " + lista.getCodigoCompartilhavel());
         System.out.println("NOME: " + lista.getNome());
         System.out.println("DESCRIÇÃO: " + lista.getDescricao());
         System.out.println("DATA DE CRIAÇÃO: " + dtf.format(lista.getDataCriacao()));
-        
+
         String dataLimiteStr = lista.getDataLimite() != null ? dtf.format(lista.getDataLimite()) : "Não definida";
         System.out.println("DATA LIMITE: " + dataLimiteStr);
+
+        System.out.println("\n--- PRODUTOS DA LISTA ---");
+        if (produtosDaLista == null || produtosDaLista.isEmpty()) {
+            System.out.println("Nenhum produto nesta lista.");
+        } else {
+            for (Pair<Produto, ListaProduto> par : produtosDaLista) {
+                Produto p = par.first;
+                ListaProduto lp = par.second;
+                System.out.printf("- %s (x%d)%n", p.getNome(), lp.getQuantidade());
+                if (lp.getObservacoes() != null && !lp.getObservacoes().isEmpty()) {
+                    System.out.printf("  Obs: %s%n", lp.getObservacoes());
+                }
+            }
+        }
 
         if (mostrarMenuGestao) {
             System.out.println("\n(1) Gerir produtos da lista");
@@ -83,7 +98,7 @@ public class VisaoLista {
         String nome = teclado.nextLine();
         System.out.print("Descrição detalhada: ");
         String descricao = teclado.nextLine();
-        
+
         LocalDate dataLimite = lerDataOpcional("Data limite (dd/mm/aaaa, opcional): ");
 
         return new Lista(-1, -1, nome, descricao, LocalDate.now(), dataLimite, "");
@@ -94,18 +109,22 @@ public class VisaoLista {
      */
     public Lista lerDadosAlteracaoLista(Lista listaAtual) {
         System.out.println("\n--- Alterar Lista (deixe em branco para manter o valor atual) ---");
-        
+
         System.out.print("Novo Nome (" + listaAtual.getNome() + "): ");
         String nome = teclado.nextLine();
-        if (nome.isEmpty()) nome = listaAtual.getNome();
+        if (nome.isEmpty())
+            nome = listaAtual.getNome();
 
         System.out.print("Nova Descrição (" + listaAtual.getDescricao() + "): ");
         String descricao = teclado.nextLine();
-        if (descricao.isEmpty()) descricao = listaAtual.getDescricao();
+        if (descricao.isEmpty())
+            descricao = listaAtual.getDescricao();
 
-        String promptData = listaAtual.getDataLimite() != null ? dtf.format(listaAtual.getDataLimite()) : "Não definida";
+        String promptData = listaAtual.getDataLimite() != null ? dtf.format(listaAtual.getDataLimite())
+                : "Não definida";
         LocalDate dataLimite = lerDataOpcional("Nova Data Limite (" + promptData + "): ");
-        if (dataLimite == null) dataLimite = listaAtual.getDataLimite();
+        if (dataLimite == null)
+            dataLimite = listaAtual.getDataLimite();
 
         return new Lista(-1, -1, nome, descricao, null, dataLimite, "");
     }
@@ -134,4 +153,3 @@ public class VisaoLista {
         }
     }
 }
-

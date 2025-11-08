@@ -21,7 +21,7 @@ public class VisaoUsuario {
 
     public String menuInicial() {
         System.out.println("\n-----------------");
-        System.out.println("PresenteFácil 2.0");
+        System.out.println("PresenteFácil 3.0");
         System.out.println("-----------------");
         System.out.println("\n(1) Login");
         System.out.println("(2) Novo usuário");
@@ -29,12 +29,12 @@ public class VisaoUsuario {
         System.out.print("\nOpção: ");
         return teclado.nextLine().toLowerCase();
     }
-    
+
     public String[] menuLogin() {
         System.out.println("\n--- Login ---");
         return pedirLogin();
     }
-    
+
     public Usuario menuCadastro() {
         System.out.println("\n--- Cadastro de Novo Usuário ---");
         return lerDadosNovoUsuario();
@@ -63,7 +63,7 @@ public class VisaoUsuario {
 
         return new Usuario(-1, nome, email, senha, pergunta, resposta);
     }
-    
+
     public String menuMeusDados(Usuario usuario) {
         System.out.println("\n-----------------");
         System.out.println("> Início > Meus Dados");
@@ -75,21 +75,23 @@ public class VisaoUsuario {
         System.out.print("\nOpção: ");
         return teclado.nextLine().toLowerCase();
     }
-    
+
     public Usuario lerDadosAlteracaoUsuario(Usuario usuarioAtual) {
         System.out.println("\n--- Alteração de Dados (deixe em branco para manter o valor atual) ---");
-        
+
         System.out.print("Novo Nome (" + usuarioAtual.getNome() + "): ");
         String nome = teclado.nextLine();
-        if (nome.isEmpty()) nome = usuarioAtual.getNome();
+        if (nome.isEmpty())
+            nome = usuarioAtual.getNome();
 
         System.out.print("Novo E-mail (" + usuarioAtual.getEmail() + "): ");
         String email = teclado.nextLine();
-        if (email.isEmpty()) email = usuarioAtual.getEmail();
-        
+        if (email.isEmpty())
+            email = usuarioAtual.getEmail();
+
         return new Usuario(usuarioAtual.getID(), nome, email, "", "", "");
     }
-    
+
     public String pedirNovoNome(String nomeAtual) {
         System.out.print("Novo Nome (" + nomeAtual + "): ");
         String nome = teclado.nextLine();
@@ -97,7 +99,8 @@ public class VisaoUsuario {
     }
 
     public boolean confirmarExclusao(String nomeUsuario) {
-        System.out.print("\nATENÇÃO! Tem a certeza que deseja excluir permanentemente a sua conta \"" + nomeUsuario + "\"? (S/N): ");
+        System.out.print("\nATENÇÃO! Tem a certeza que deseja excluir permanentemente a sua conta \"" + nomeUsuario
+                + "\"? (S/N): ");
         return teclado.nextLine().equalsIgnoreCase("s");
     }
 
@@ -106,4 +109,3 @@ public class VisaoUsuario {
         teclado.nextLine();
     }
 }
-

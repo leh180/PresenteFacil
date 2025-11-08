@@ -3,15 +3,19 @@ package model;
 import bib.ListaInvertida;
 import bib.ElementoLista;
 
-import java.text.Normalizer;
 import java.util.*;
+
 /**
- * IndiceInvertido que calcula TF x IDF usando a ListaInvertida (bib.ListaInvertida)
- * e o total de registros obtido através do CRUDProduto (herda Arquivo.totalRegistros()).
+ * IndiceInvertido que calcula TF x IDF usando a ListaInvertida
+ * (bib.ListaInvertida)
+ * e o total de registros obtido através do CRUDProduto (herda
+ * Arquivo.totalRegistros()).
  *
  * Observações:
- * - Usa ListaInvertida.read(termo) que retorna ElementoLista[] (cada ElementoLista tem id e frequencia).
- * - Usa ListaInvertida.prepararTermos(consulta) para normalizar e tokenizar a consulta.
+ * - Usa ListaInvertida.read(termo) que retorna ElementoLista[] (cada
+ * ElementoLista tem id e frequencia).
+ * - Usa ListaInvertida.prepararTermos(consulta) para normalizar e tokenizar a
+ * consulta.
  */
 public class IndiceInvertido {
 
@@ -42,9 +46,11 @@ public class IndiceInvertido {
             if (!t.isBlank() && !stopWords.contains(t))
                 termosFiltrados.add(t);
         }
-        if (termosFiltrados.isEmpty()) return Collections.emptyList();
+        if (termosFiltrados.isEmpty())
+            return Collections.emptyList();
 
-        // 2) total de documentos (produtos) — assume que CRUDProduto/Arquivo implementa totalRegistros()
+        // 2) total de documentos (produtos) — assume que CRUDProduto/Arquivo implementa
+        // totalRegistros()
         int totalProdutos = crudProduto.totalRegistros(); // implemente totalRegistros() em Arquivo ou CRUDProduto
 
         // 3) acumula pesos TF*IDF por id
@@ -55,7 +61,8 @@ public class IndiceInvertido {
             ElementoLista[] lista = listaInvertida.read(termo);
 
             int df = lista.length; // nº de documentos que contêm o termo
-            if (df == 0) continue;
+            if (df == 0)
+                continue;
 
             // calcula IDF: log(N/df) + 1
             double idf = Math.log((double) totalProdutos / (double) df) + 1.0;
@@ -82,7 +89,6 @@ public class IndiceInvertido {
                 "de", "da", "do", "e", "a", "o", "as", "os",
                 "para", "por", "com", "sem", "um", "uma", "em",
                 "no", "na", "nos", "nas", "ao", "aos", "dos", "das",
-                "que", "se", "o", "os", "é"
-        ));
+                "que", "se", "o", "os", "é"));
     }
 }
