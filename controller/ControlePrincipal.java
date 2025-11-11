@@ -39,6 +39,8 @@ public class ControlePrincipal {
         CRUDLista crudLista = new CRUDLista();
         CRUDProduto crudProduto = new CRUDProduto();
 
+        this.crudListaProduto = new CRUDListaProduto();
+        
         // E são injetadas nos outros controladores
         this.controleUsuario = new ControleUsuario(crudUsuario, crudLista);
         this.controleLista = new ControleLista(crudLista, crudProduto, crudListaProduto, crudUsuario);
