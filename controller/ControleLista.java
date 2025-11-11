@@ -108,7 +108,7 @@ public class ControleLista {
         do {
             List<Pair<Produto, ListaProduto>> produtosCompletos = new ArrayList<>();
             try {
-                List<ListaProduto> associacoes = crudListaProduto.readAllByLista(lista.getID());
+                List<ListaProduto> associacoes = crudListaProduto.listarTodosListaProdutos(lista.getID(), crudProduto); //mudança de metodo
                 for (ListaProduto lp : associacoes) {
                     Produto p = crudProduto.readByID(lp.getIdProduto());
                     if (p != null) {
@@ -162,7 +162,7 @@ public class ControleLista {
                 // Buscar os produtos da lista para exibição
                 List<Pair<Produto, ListaProduto>> produtosCompletos = new ArrayList<>();
                 try {
-                    List<ListaProduto> associacoes = crudListaProduto.readAllByLista(lista.getID());
+                    List<ListaProduto> associacoes = crudListaProduto.listarTodosListaProdutos(lista.getID(), crudProduto); // Mudanca no mtodo
                     for (ListaProduto lp : associacoes) {
                         Produto p = crudProduto.readByID(lp.getIdProduto());
                         if (p != null) {
